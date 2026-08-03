@@ -314,18 +314,14 @@ with st.sidebar:
     # Check local file status
     file_exists = LATEST_CSV_PATH.exists()
     last_mod_time = "-"
-    file_size_kb = 0
     if file_exists:
         mtime = os.path.getmtime(LATEST_CSV_PATH)
         last_mod_time = datetime.datetime.fromtimestamp(mtime).strftime("%d-%m-%Y %H:%M:%S")
-        file_size_kb = round(os.path.getsize(LATEST_CSV_PATH) / 1024, 1)
 
     st.markdown(
         f"""
         <div style="background: #F1F5F9; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 0.8rem;">
-            <div style="color: #475569;">📁 <b>File:</b> <code>{LATEST_CSV_PATH.name}</code></div>
-            <div style="color: #475569; margin-top: 4px;">🕒 <b>Last Update:</b> {last_mod_time}</div>
-            <div style="color: #475569; margin-top: 4px;">📦 <b>Size:</b> {file_size_kb} KB</div>
+            <div style="color: #475569;">🕒 <b>Last Update:</b> {last_mod_time}</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -447,33 +443,20 @@ if df_raw is None or len(df_raw) == 0:
 # DYNAMIC FILTERING
 # ==============================================================================
 with st.sidebar:
-    all_directorates = sorted([d for d in df_raw["Directorate"].dropna().unique().tolist() if str(d).strip() != "-"])
-    selected_dirs = st.multiselect("Directorate", options=all_directorates, default=all_directorates)
-
-    # Filter Division options based on selected Directorates
-    if selected_dirs and len(selected_dirs) < len(all_directorates):
-        div_source = df_raw[df_raw["Directorate"].isin(selected_dirs)]
-    else:
-        div_source = df_raw
-
-    all_div_options = sorted([d for d in div_source["Division"].dropna().unique().tolist() if str(d).strip() != "-"])
-    selected_divs = st.multiselect("Division", options=all_div_options, default=all_div_options)
-
-    # Filter Company options
-    all_company_options = sorted([d for d in df_raw["Company_Name"].dropna().unique().tolist() if str(d).strip() != "-"])
-    selected_companies = st.multiselect("Company", options=all_company_options, default=all_company_options)
+    all_divisions = sorted([d for d in df_raw["Division"].dropna().unique().tolist() if str(d).strip() not in ["-", ""]])
+    division_options = ["All Division"] + all_divisions
+    selected_division = st.selectbox(
+        "Division",
+        options=division_options,
+        index=0,
+        help="Filter records by a specific division or select 'All Division' to view everything.",
+    )
 
 # Apply filters safely
 df_filtered = df_raw.copy()
 
-if selected_dirs and len(selected_dirs) < len(all_directorates):
-    df_filtered = df_filtered[df_filtered["Directorate"].isin(selected_dirs)]
-
-if selected_divs and len(selected_divs) < len(all_div_options):
-    df_filtered = df_filtered[df_filtered["Division"].isin(selected_divs)]
-
-if selected_companies and len(selected_companies) < len(all_company_options):
-    df_filtered = df_filtered[df_filtered["Company_Name"].isin(selected_companies)]
+if selected_division and selected_division != "All Division":
+    df_filtered = df_filtered[df_filtered["Division"] == selected_division]
 
 if status_filter and status_filter != "All Status":
     df_filtered = df_filtered[df_filtered["Engagement_Status"] == status_filter]
@@ -498,8 +481,6 @@ st.markdown(
         <h1>📊 KLIP Finance Engagement Dashboard 2026</h1>
         <p>Real-Time Corporate Finance Employee Engagement Monitoring via Google Drive Ingestion</p>
         <div class="header-pills">
-            <span class="pill">🟢 <b>Data Source:</b> Google Drive Ingestion</span>
-            <span class="pill">📂 <b>File:</b> {LATEST_CSV_PATH.name}</span>
             <span class="pill">🕒 <b>Last Sync:</b> {last_mod_time}</span>
             <span class="pill">👥 <b>Total Dataset:</b> {total_all:,} Employees</span>
         </div>
