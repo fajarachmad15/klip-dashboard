@@ -203,13 +203,25 @@ def load_klip_data(file_path: str = str(LATEST_CSV_PATH)) -> Optional[pd.DataFra
             # Prioritas 7: Engagement Status
             elif clean in ["engagement", "status", "engagement_status", "status_engagement", "klip_status", "klip_engagement"] or ("engagement" in clean or "status" in clean):
                 target = "Engagement_Status"
-            # Prioritas 8: Engagement Score
+            # Prioritas 8: Status PA (Eligible PA)
+            elif clean in ["sttspa", "status_pa", "stts_pa", "status pa", "pa_status"]:
+                target = "Status_PA"
+            # Prioritas 9: Roles (Leader, Sponsor, Member, Fasilitator)
+            elif clean in ["leader", "as_leader", "as_a_leader"]:
+                target = "Leader"
+            elif clean in ["sponsor", "as_sponsor", "as_a_sponsor"]:
+                target = "Sponsor"
+            elif clean in ["member", "as_member", "as_a_member"]:
+                target = "Member"
+            elif clean in ["fasilitator", "facilitator", "as_fasilitator", "as_a_fasilitator"]:
+                target = "Fasilitator"
+            # Prioritas 10: Engagement Score
             elif any(k in clean for k in ["score", "nilai", "skor"]):
                 target = "Engagement_Score"
-            # Prioritas 9: Location
+            # Prioritas 11: Location
             elif any(k in clean for k in ["loc", "lokasi", "location"]):
                 target = "Loc_Type"
-            # Prioritas 10: Completion Date
+            # Prioritas 12: Completion Date
             elif any(k in clean for k in ["date", "tanggal", "completion"]):
                 target = "Completion_Date"
 
@@ -229,11 +241,11 @@ def load_klip_data(file_path: str = str(LATEST_CSV_PATH)) -> Optional[pd.DataFra
             str_cols = df.select_dtypes(include=["object"]).columns
             df["Employee_Name"] = df[str_cols[0]] if len(str_cols) > 0 else "Karyawan"
         if "Directorate" not in df.columns:
-            df["Directorate"] = "CORP FINANCE"
+            df["Directorate"] = "FINANCE"
         if "Division" not in df.columns:
             df["Division"] = "General Finance"
         if "Company_Name" not in df.columns:
-            df["Company_Name"] = "Holding"
+            df["Company_Name"] = "CORPORATE"
         if "Engagement_Status" not in df.columns:
             df["Engagement_Status"] = "Engaged"
 
@@ -259,13 +271,14 @@ def load_klip_data(file_path: str = str(LATEST_CSV_PATH)) -> Optional[pd.DataFra
                 s_stat = s_stat.iloc[:, 0]
             df["Engagement_Status"] = s_stat.apply(normalize_status)
 
-        # Bersihkan spasi string untuk kolom teks penting
-        for col in ["Employee_ID", "Employee_Name", "Directorate", "Division", "Company_Name"]:
+        # Bersihkan spasi string untuk kolom teks penting tanpa menghilangkan data
+        for col in ["Employee_ID", "Employee_Name", "Directorate", "Division", "Company_Name", "Loc_Type", "Status_PA"]:
             if col in df.columns:
                 s_col = df[col]
                 if isinstance(s_col, pd.DataFrame):
                     s_col = s_col.iloc[:, 0]
-                df[col] = s_col.fillna("Unknown").astype(str).str.strip()
+                df[col] = s_col.fillna("-").astype(str).str.strip()
+                df[col] = df[col].replace("", "-").replace("nan", "-").replace("None", "-")
 
         return df
 
@@ -337,7 +350,12 @@ with st.sidebar:
     # Filter Section
     st.markdown("### 🔍 Filter Data")
     filter_search = st.text_input("Cari Nama / NIK", placeholder="Ketik nama atau NIK...", help="Pencarian cepat pada kolom NIK dan Nama.")
-    status_filter = st.selectbox("Status Engagement", ["Semua Status", "Engaged", "Non-Engaged"])
+    status_filter = st.selectbox(
+        "Status Engagement",
+        options=["Semua Status", "Engaged", "Non-Engaged"],
+        index=0,
+        help="Filter data berdasarkan status partisipasi engagement."
+    )
 
 
 # ==============================================================================
@@ -425,32 +443,35 @@ if df_raw is None or len(df_raw) == 0:
 # DYNAMIC FILTERING
 # ==============================================================================
 with st.sidebar:
-    all_directorates = sorted(df_raw["Directorate"].dropna().unique().tolist())
+    all_directorates = sorted([d for d in df_raw["Directorate"].dropna().unique().tolist() if str(d).strip() != "-"])
     selected_dirs = st.multiselect("Direktorat", options=all_directorates, default=all_directorates)
 
     # Filter Divisi berdasarkan Direktorat terpilih
-    div_options = sorted(
-        df_raw[df_raw["Directorate"].isin(selected_dirs)]["Division"].dropna().unique().tolist()
-    )
-    selected_divs = st.multiselect("Divisi", options=div_options, default=div_options)
+    if selected_dirs and len(selected_dirs) < len(all_directorates):
+        div_source = df_raw[df_raw["Directorate"].isin(selected_dirs)]
+    else:
+        div_source = df_raw
+
+    all_div_options = sorted([d for d in div_source["Division"].dropna().unique().tolist() if str(d).strip() != "-"])
+    selected_divs = st.multiselect("Divisi", options=all_div_options, default=all_div_options)
 
     # Filter Perusahaan
-    company_options = sorted(df_raw["Company_Name"].dropna().unique().tolist())
-    selected_companies = st.multiselect("Perusahaan (Company)", options=company_options, default=company_options)
+    all_company_options = sorted([d for d in df_raw["Company_Name"].dropna().unique().tolist() if str(d).strip() != "-"])
+    selected_companies = st.multiselect("Perusahaan (Company)", options=all_company_options, default=all_company_options)
 
-# Terapkan Filter ke DataFrame
+# Terapkan Filter ke DataFrame secara aman
 df_filtered = df_raw.copy()
 
-if selected_dirs:
+if selected_dirs and len(selected_dirs) < len(all_directorates):
     df_filtered = df_filtered[df_filtered["Directorate"].isin(selected_dirs)]
 
-if selected_divs:
+if selected_divs and len(selected_divs) < len(all_div_options):
     df_filtered = df_filtered[df_filtered["Division"].isin(selected_divs)]
 
-if selected_companies:
+if selected_companies and len(selected_companies) < len(all_company_options):
     df_filtered = df_filtered[df_filtered["Company_Name"].isin(selected_companies)]
 
-if status_filter != "Semua Status":
+if status_filter and status_filter != "Semua Status":
     df_filtered = df_filtered[df_filtered["Engagement_Status"] == status_filter]
 
 if filter_search.strip():
@@ -551,6 +572,56 @@ with mcol4:
         """,
         unsafe_allow_html=True,
     )
+
+# Role Breakdown (jika kolom role tersedia di dataset)
+role_cols = [c for c in ["Leader", "Sponsor", "Member", "Fasilitator"] if c in df_filtered.columns]
+if role_cols:
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+    rcol1, rcol2, rcol3, rcol4 = st.columns(4)
+    with rcol1:
+        leader_cnt = int(pd.to_numeric(df_filtered["Leader"], errors="coerce").fillna(0).sum()) if "Leader" in df_filtered.columns else 0
+        st.markdown(
+            f"""
+            <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 10px; padding: 10px 14px; text-align: center;">
+                <span style="font-size: 0.75rem; color: #1E40AF; font-weight: 600; text-transform: uppercase;">👑 As a Leader</span>
+                <div style="font-size: 1.35rem; font-weight: 800; color: #1D4ED8; margin-top: 2px;">{leader_cnt}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with rcol2:
+        sponsor_cnt = int(pd.to_numeric(df_filtered["Sponsor"], errors="coerce").fillna(0).sum()) if "Sponsor" in df_filtered.columns else 0
+        st.markdown(
+            f"""
+            <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px; padding: 10px 14px; text-align: center;">
+                <span style="font-size: 0.75rem; color: #166534; font-weight: 600; text-transform: uppercase;">⭐ As a Sponsor</span>
+                <div style="font-size: 1.35rem; font-weight: 800; color: #15803D; margin-top: 2px;">{sponsor_cnt}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with rcol3:
+        member_cnt = int(pd.to_numeric(df_filtered["Member"], errors="coerce").fillna(0).sum()) if "Member" in df_filtered.columns else 0
+        st.markdown(
+            f"""
+            <div style="background: #FAF5FF; border: 1px solid #E9D5FF; border-radius: 10px; padding: 10px 14px; text-align: center;">
+                <span style="font-size: 0.75rem; color: #6B21A8; font-weight: 600; text-transform: uppercase;">👥 As a Member</span>
+                <div style="font-size: 1.35rem; font-weight: 800; color: #7E22CE; margin-top: 2px;">{member_cnt}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with rcol4:
+        fasil_cnt = int(pd.to_numeric(df_filtered["Fasilitator"], errors="coerce").fillna(0).sum()) if "Fasilitator" in df_filtered.columns else 0
+        st.markdown(
+            f"""
+            <div style="background: #FFF7ED; border: 1px solid #FED7AA; border-radius: 10px; padding: 10px 14px; text-align: center;">
+                <span style="font-size: 0.75rem; color: #9A3412; font-weight: 600; text-transform: uppercase;">🎯 As a Fasilitator</span>
+                <div style="font-size: 1.35rem; font-weight: 800; color: #C2410C; margin-top: 2px;">{fasil_cnt}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -749,13 +820,18 @@ with table_col2:
 
 display_cols = [
     col for col in [
+        "Loc_Type",
         "Employee_ID",
         "Employee_Name",
+        "Status_PA",
         "Engagement_Status",
+        "Leader",
+        "Sponsor",
+        "Member",
+        "Fasilitator",
         "Directorate",
         "Division",
         "Company_Name",
-        "Loc_Type",
         "Engagement_Score",
         "Completion_Date",
     ]
@@ -767,9 +843,15 @@ st.dataframe(
     use_container_width=True,
     height=450,
     column_config={
+        "Loc_Type": st.column_config.TextColumn("Lokasi (Loc)", width="small"),
         "Employee_ID": st.column_config.TextColumn("NIK / ID", width="medium"),
         "Employee_Name": st.column_config.TextColumn("Nama Karyawan", width="large"),
+        "Status_PA": st.column_config.TextColumn("Status PA", width="small"),
         "Engagement_Status": st.column_config.TextColumn("Status", width="medium"),
+        "Leader": st.column_config.NumberColumn("Leader", width="small", format="%d"),
+        "Sponsor": st.column_config.NumberColumn("Sponsor", width="small", format="%d"),
+        "Member": st.column_config.NumberColumn("Member", width="small", format="%d"),
+        "Fasilitator": st.column_config.NumberColumn("Fasilitator", width="small", format="%d"),
         "Directorate": st.column_config.TextColumn("Direktorat", width="medium"),
         "Division": st.column_config.TextColumn("Divisi", width="large"),
         "Company_Name": st.column_config.TextColumn("Perusahaan", width="medium"),
@@ -780,7 +862,6 @@ st.dataframe(
             min_value=0,
             max_value=100,
         ),
-        "Loc_Type": st.column_config.TextColumn("Lokasi", width="small"),
         "Completion_Date": st.column_config.TextColumn("Tgl Selesai", width="small"),
     },
     hide_index=True,
