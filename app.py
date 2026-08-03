@@ -627,17 +627,31 @@ st.markdown("<br>", unsafe_allow_html=True)
 
 
 # ==============================================================================
-# VISUALISASI INTERAKTIF (PLOTLY) - LAYOUT BEBAS OVERLAPPING
+# VISUALISASI INTERAKTIF (EXECUTIVE DASHBOARD) - BEBAS OVERLAPPING & HIGH CONTRAST
 # ==============================================================================
 color_map = {"Engaged": "#10B981", "Non-Engaged": "#EF4444"}
 
 if total_filtered > 0:
-    # ROW 1: Donut Chart & Directorate Bar Chart
-    row1_col1, row1_col2 = st.columns([1, 1.4])
+    # Header Keterangan Warna (No Clutter)
+    st.markdown(
+        """
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 4px 2px;">
+            <div style="font-size: 1.1rem; font-weight: 700; color: #0F172A;">📊 Analisis Visual Partisipasi</div>
+            <div style="font-size: 0.85rem; font-weight: 600; background: #FFFFFF; padding: 6px 14px; border-radius: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <span style="color: #10B981; margin-right: 16px;">● <b>Engaged</b> (Ikut Serta)</span>
+                <span style="color: #EF4444;">● <b>Non-Engaged</b> (Belum Partisipasi)</span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # ROW 1: Donut Chart & Directorate / Overall Overview
+    row1_col1, row1_col2 = st.columns([1, 1.3])
 
     with row1_col1:
         with st.container(border=True):
-            st.markdown('<div class="section-title">🎯 Distribusi Status Engagement</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-title">🎯 Rasio Partisipasi Keseluruhan</div>', unsafe_allow_html=True)
             status_counts = df_filtered["Engagement_Status"].value_counts().reset_index()
             status_counts.columns = ["Status", "Count"]
             
@@ -645,42 +659,37 @@ if total_filtered > 0:
                 status_counts,
                 names="Status",
                 values="Count",
-                hole=0.58,
+                hole=0.60,
                 color="Status",
                 color_discrete_map=color_map,
             )
             fig_donut.update_traces(
                 textposition="inside",
                 textinfo="percent+label",
+                textfont=dict(color="#FFFFFF", size=12, family="Plus Jakarta Sans, sans-serif"),
                 hoverinfo="label+value+percent",
-                marker=dict(line=dict(color="#FFFFFF", width=2)),
+                marker=dict(line=dict(color="#FFFFFF", width=2.5)),
             )
             fig_donut.update_layout(
-                margin=dict(t=40, b=20, l=10, r=10),
-                height=350,
-                showlegend=True,
-                legend=dict(
-                    orientation="h",
-                    yanchor="bottom",
-                    y=1.02,
-                    xanchor="center",
-                    x=0.5,
-                ),
+                margin=dict(t=20, b=20, l=10, r=10),
+                height=340,
+                showlegend=False,
                 annotations=[
                     dict(
-                        text=f"<b>{engagement_rate:.1f}%</b><br><span style='font-size:11px;color:#64748B;'>Engaged</span>",
+                        text=f"<b style='font-size:22px;color:#0F172A;'>{engagement_rate:.1f}%</b><br><span style='font-size:12px;color:#64748B;font-weight:600;'>Partisipasi</span>",
                         x=0.5,
                         y=0.5,
-                        font_size=17,
                         showarrow=False,
                     )
                 ],
+                plot_bgcolor="rgba(0,0,0,0)",
+                paper_bgcolor="rgba(0,0,0,0)",
             )
             st.plotly_chart(fig_donut, use_container_width=True)
 
     with row1_col2:
         with st.container(border=True):
-            st.markdown('<div class="section-title">🏢 Engagement per Direktorat</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-title">🏢 Partisipasi per Direktorat</div>', unsafe_allow_html=True)
             dir_grouped = (
                 df_filtered.groupby(["Directorate", "Engagement_Status"])
                 .size()
@@ -695,19 +704,26 @@ if total_filtered > 0:
                 orientation="h",
                 barmode="stack",
                 color_discrete_map=color_map,
+                text="Count",
                 labels={"Count": "Jumlah Karyawan", "Directorate": "Direktorat", "Engagement_Status": "Status"},
             )
+            fig_dir.update_traces(
+                textposition="inside",
+                textfont=dict(color="#FFFFFF", size=11, family="Plus Jakarta Sans, sans-serif"),
+            )
             fig_dir.update_layout(
-                margin=dict(t=40, b=20, l=10, r=20),
-                height=350,
-                xaxis=dict(gridcolor="#F1F5F9"),
-                yaxis=dict(autorange="reversed"),
-                legend=dict(
-                    orientation="h",
-                    yanchor="bottom",
-                    y=1.02,
-                    xanchor="right",
-                    x=1.0,
+                margin=dict(t=20, b=40, l=20, r=20),
+                height=340,
+                showlegend=False,
+                xaxis=dict(
+                    gridcolor="#E2E8F0",
+                    tickfont=dict(color="#1E293B", size=11, family="Plus Jakarta Sans, sans-serif"),
+                    title=dict(text="Jumlah Karyawan", font=dict(color="#0F172A", size=12)),
+                ),
+                yaxis=dict(
+                    autorange="reversed",
+                    tickfont=dict(color="#1E293B", size=11, family="Plus Jakarta Sans, sans-serif"),
+                    title=None,
                 ),
                 plot_bgcolor="rgba(0,0,0,0)",
                 paper_bgcolor="rgba(0,0,0,0)",
@@ -716,12 +732,12 @@ if total_filtered > 0:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # ROW 2: Division & Company Breakdown
-    row2_col1, row2_col2 = st.columns([1.5, 1])
+    # ROW 2: Division Breakdown & Top 5 Divisi Butuh Perhatian
+    row2_col1, row2_col2 = st.columns([1.5, 1.1])
 
     with row2_col1:
         with st.container(border=True):
-            st.markdown('<div class="section-title">📈 Distribusi Engagement per Divisi (Top 12)</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-title">📈 Distribusi Engagement per Divisi</div>', unsafe_allow_html=True)
             div_grouped = (
                 df_filtered.groupby(["Division", "Engagement_Status"])
                 .size()
@@ -730,7 +746,7 @@ if total_filtered > 0:
             top_divs = (
                 df_filtered["Division"]
                 .value_counts()
-                .head(12)
+                .head(10)
                 .index.tolist()
             )
             div_grouped_filtered = div_grouped[div_grouped["Division"].isin(top_divs)]
@@ -740,21 +756,29 @@ if total_filtered > 0:
                 x="Division",
                 y="Count",
                 color="Engagement_Status",
-                barmode="group",
+                barmode="stack",
                 color_discrete_map=color_map,
+                text="Count",
                 labels={"Count": "Jumlah Karyawan", "Division": "Divisi", "Engagement_Status": "Status"},
             )
+            fig_div.update_traces(
+                textposition="inside",
+                textfont=dict(color="#FFFFFF", size=10, family="Plus Jakarta Sans, sans-serif"),
+            )
             fig_div.update_layout(
-                margin=dict(t=40, b=60, l=10, r=10),
-                height=370,
-                xaxis=dict(tickangle=-30, gridcolor="#F1F5F9"),
-                yaxis=dict(gridcolor="#F1F5F9"),
-                legend=dict(
-                    orientation="h",
-                    yanchor="bottom",
-                    y=1.02,
-                    xanchor="right",
-                    x=1.0,
+                margin=dict(t=30, b=80, l=40, r=20),
+                height=380,
+                showlegend=False,
+                xaxis=dict(
+                    tickangle=-25,
+                    gridcolor="#E2E8F0",
+                    tickfont=dict(color="#1E293B", size=11, family="Plus Jakarta Sans, sans-serif"),
+                    title=None,
+                ),
+                yaxis=dict(
+                    gridcolor="#E2E8F0",
+                    tickfont=dict(color="#1E293B", size=11, family="Plus Jakarta Sans, sans-serif"),
+                    title=dict(text="Jumlah Karyawan", font=dict(color="#0F172A", size=12)),
                 ),
                 plot_bgcolor="rgba(0,0,0,0)",
                 paper_bgcolor="rgba(0,0,0,0)",
@@ -763,60 +787,92 @@ if total_filtered > 0:
 
     with row2_col2:
         with st.container(border=True):
-            st.markdown('<div class="section-title">🏢 Distribusi per Perusahaan (Company)</div>', unsafe_allow_html=True)
-            comp_grouped = (
-                df_filtered.groupby(["Company_Name", "Engagement_Status"])
-                .size()
-                .reset_index(name="Count")
-            )
-            fig_comp = px.bar(
-                comp_grouped,
-                x="Company_Name",
-                y="Count",
-                color="Engagement_Status",
-                barmode="stack",
-                color_discrete_map=color_map,
-                labels={"Count": "Jumlah Karyawan", "Company_Name": "Perusahaan", "Engagement_Status": "Status"},
-            )
-            fig_comp.update_layout(
-                margin=dict(t=40, b=50, l=10, r=10),
-                height=370,
-                xaxis=dict(tickangle=-20, gridcolor="#F1F5F9"),
-                yaxis=dict(gridcolor="#F1F5F9"),
-                legend=dict(
+            st.markdown('<div class="section-title" style="color:#DC2626;">⚠️ Top Divisi Belum Partisipasi</div>', unsafe_allow_html=True)
+            
+            # Hitung non-engaged per divisi
+            non_eng_df = df_filtered[df_filtered["Engagement_Status"] == "Non-Engaged"]
+            if len(non_eng_df) > 0:
+                top_non_eng = (
+                    non_eng_df["Division"]
+                    .value_counts()
+                    .reset_index()
+                )
+                top_non_eng.columns = ["Division", "Non_Engaged_Count"]
+                top_non_eng = top_non_eng.head(5)
+
+                fig_attention = px.bar(
+                    top_non_eng,
+                    y="Division",
+                    x="Non_Engaged_Count",
                     orientation="h",
-                    yanchor="bottom",
-                    y=1.02,
-                    xanchor="right",
-                    x=1.0,
-                ),
-                plot_bgcolor="rgba(0,0,0,0)",
-                paper_bgcolor="rgba(0,0,0,0)",
-            )
-            st.plotly_chart(fig_comp, use_container_width=True)
+                    color_discrete_sequence=["#EF4444"],
+                    text="Non_Engaged_Count",
+                    labels={"Non_Engaged_Count": "Belum Partisipasi", "Division": "Divisi"},
+                )
+                fig_attention.update_traces(
+                    textposition="outside",
+                    textfont=dict(color="#991B1B", size=11, family="Plus Jakarta Sans, sans-serif"),
+                    cliponaxis=False,
+                )
+                fig_attention.update_layout(
+                    margin=dict(t=30, b=40, l=20, r=40),
+                    height=380,
+                    showlegend=False,
+                    xaxis=dict(
+                        gridcolor="#E2E8F0",
+                        tickfont=dict(color="#1E293B", size=11, family="Plus Jakarta Sans, sans-serif"),
+                        title=dict(text="Jumlah Belum Ikut", font=dict(color="#0F172A", size=12)),
+                    ),
+                    yaxis=dict(
+                        autorange="reversed",
+                        tickfont=dict(color="#1E293B", size=11, family="Plus Jakarta Sans, sans-serif"),
+                        title=None,
+                    ),
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    paper_bgcolor="rgba(0,0,0,0)",
+                )
+                st.plotly_chart(fig_attention, use_container_width=True)
+            else:
+                st.success("🎉 Luar biasa! Seluruh karyawan pada filter saat ini telah berstatus **Engaged** (100% Partisipasi).")
 
 else:
     st.info("ℹ️ Tidak ada data yang cocok dengan kriteria filter saat ini. Coba sesuaikan filter di sidebar.")
 
 
 # ==============================================================================
-# INTERACTIVE DATA TABLE
+# INTERACTIVE DATA TABLE (EXECUTIVE ACTION VIEW)
 # ==============================================================================
 st.markdown("---")
-st.markdown('<div class="section-title">📋 Detail Data Karyawan</div>', unsafe_allow_html=True)
 
-table_col1, table_col2 = st.columns([3, 1])
+table_col1, table_col2, table_col3 = st.columns([2.2, 1.8, 1])
+
 with table_col1:
-    st.caption(f"Menampilkan **{len(df_filtered):,}** dari total **{len(df_raw):,}** baris data.")
+    st.markdown('<div class="section-title" style="margin-bottom:0;">📋 Detail Data Karyawan</div>', unsafe_allow_html=True)
+
 with table_col2:
-    csv_data = df_filtered.to_csv(index=False).encode("utf-8")
+    only_non_engaged = st.checkbox(
+        "🔴 **Tampilkan Hanya Non-Engaged**",
+        value=False,
+        help="Filter instan untuk menampilkan daftar seluruh karyawan yang belum berpartisipasi.",
+    )
+
+# Filter tabel berdasarkan toggle Non-Engaged
+df_table = df_filtered[df_filtered["Engagement_Status"] == "Non-Engaged"] if only_non_engaged else df_filtered
+
+with table_col3:
+    csv_data = df_table.to_csv(index=False).encode("utf-8")
     st.download_button(
         label="📥 Unduh Data (CSV)",
         data=csv_data,
-        file_name=f"klip_finance_export_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+        file_name=f"klip_finance_{'non_engaged_' if only_non_engaged else ''}export_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
         mime="text/csv",
         use_container_width=True,
     )
+
+st.caption(
+    f"Menampilkan **{len(df_table):,}** baris data"
+    + (" *(⚠️ Filter: Hanya Karyawan Non-Engaged)*" if only_non_engaged else f" dari total **{len(df_raw):,}** karyawan.")
+)
 
 display_cols = [
     col for col in [
@@ -835,11 +891,11 @@ display_cols = [
         "Engagement_Score",
         "Completion_Date",
     ]
-    if col in df_filtered.columns
+    if col in df_table.columns
 ]
 
 st.dataframe(
-    df_filtered[display_cols],
+    df_table[display_cols],
     use_container_width=True,
     height=450,
     column_config={
