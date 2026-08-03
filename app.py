@@ -745,7 +745,7 @@ if total_filtered > 0:
         with ctrl_col1:
             div_status_view = st.selectbox(
                 "Status View",
-                options=["All Status", "Engaged Only", "Non-Engaged Only"],
+                options=["All Status", "Show Engaged", "Show Non-Engaged"],
                 index=0,
                 key="div_status_view",
                 help="Select which status category to display on the chart."
@@ -761,7 +761,7 @@ if total_filtered > 0:
 
         ascending_sort = (div_sort_order == "Lowest to Highest")
 
-        if div_status_view == "Engaged Only":
+        if div_status_view == "Show Engaged":
             div_data = df_filtered[df_filtered["Engagement_Status"] == "Engaged"]
             if len(div_data) > 0:
                 div_grouped = div_data.groupby("Division").size().reset_index(name="Count")
@@ -787,7 +787,7 @@ if total_filtered > 0:
             else:
                 fig_div = None
 
-        elif div_status_view == "Non-Engaged Only":
+        elif div_status_view == "Show Non-Engaged":
             div_data = df_filtered[df_filtered["Engagement_Status"] == "Non-Engaged"]
             if len(div_data) > 0:
                 div_grouped = div_data.groupby("Division").size().reset_index(name="Count")
@@ -873,35 +873,47 @@ else:
 # ==============================================================================
 st.markdown("---")
 
-table_col1, table_col2, table_col3 = st.columns([2.2, 1.8, 1])
+table_col1, table_col2, table_col3 = st.columns([1.8, 2.2, 1])
 
 with table_col1:
     st.markdown('<div class="section-title" style="margin-bottom:0;">📋 Employee Engagement Details</div>', unsafe_allow_html=True)
 
 with table_col2:
-    only_non_engaged = st.checkbox(
-        "🔴 **Show Non-Engaged Only**",
-        value=False,
-        help="Instant filter to show all employees who have not participated yet.",
+    table_filter_view = st.radio(
+        "Table Status Filter",
+        options=["All", "Show Engaged", "Show Non-Engaged"],
+        index=0,
+        horizontal=True,
+        label_visibility="collapsed",
+        key="table_status_filter_radio",
+        help="Filter table records by engagement status.",
     )
 
-# Filter table based on Non-Engaged toggle
-df_table = df_filtered[df_filtered["Engagement_Status"] == "Non-Engaged"] if only_non_engaged else df_filtered
+# Filter table based on selected status view
+if table_filter_view == "Show Engaged":
+    df_table = df_filtered[df_filtered["Engagement_Status"] == "Engaged"]
+elif table_filter_view == "Show Non-Engaged":
+    df_table = df_filtered[df_filtered["Engagement_Status"] == "Non-Engaged"]
+else:
+    df_table = df_filtered
 
 with table_col3:
+    export_prefix = "engaged_" if table_filter_view == "Show Engaged" else ("non_engaged_" if table_filter_view == "Show Non-Engaged" else "")
     csv_data = df_table.to_csv(index=False).encode("utf-8")
     st.download_button(
         label="📥 Export Data (CSV)",
         data=csv_data,
-        file_name=f"klip_finance_{'non_engaged_' if only_non_engaged else ''}export_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+        file_name=f"klip_finance_{export_prefix}export_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
         mime="text/csv",
         use_container_width=True,
     )
 
-st.caption(
-    f"Showing **{len(df_table):,}** records"
-    + (" *(⚠️ Filter: Non-Engaged Only)*" if only_non_engaged else f" from total **{len(df_raw):,}** employees.")
-)
+if table_filter_view == "Show Engaged":
+    st.caption(f"Showing **{len(df_table):,}** records *(🟢 Filter: Engaged)* from total **{len(df_raw):,}** employees.")
+elif table_filter_view == "Show Non-Engaged":
+    st.caption(f"Showing **{len(df_table):,}** records *(🔴 Filter: Non-Engaged)* from total **{len(df_raw):,}** employees.")
+else:
+    st.caption(f"Showing **{len(df_table):,}** records from total **{len(df_raw):,}** employees.")
 
 display_cols = [
     col for col in [
