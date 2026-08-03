@@ -298,7 +298,7 @@ with st.sidebar:
                 📊
             </div>
             <div>
-                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #1E293B;">KLIP Dashboard</h3>
+                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #1E293B;">KLIP Analytics</h3>
                 <span style="font-size: 0.75rem; color: #64748B; font-weight: 500;">Google Drive Ingestion Engine</span>
             </div>
         </div>
@@ -309,9 +309,9 @@ with st.sidebar:
     st.markdown("---")
 
     # Status Data & Refresh Section
-    st.markdown("### 🔄 Sinkronisasi Data")
+    st.markdown("### 🔄 Data Synchronization")
     
-    # Cek status file lokal
+    # Check local file status
     file_exists = LATEST_CSV_PATH.exists()
     last_mod_time = "-"
     file_size_kb = 0
@@ -324,45 +324,49 @@ with st.sidebar:
         f"""
         <div style="background: #F1F5F9; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 0.8rem;">
             <div style="color: #475569;">📁 <b>File:</b> <code>{LATEST_CSV_PATH.name}</code></div>
-            <div style="color: #475569; margin-top: 4px;">🕒 <b>Update:</b> {last_mod_time}</div>
-            <div style="color: #475569; margin-top: 4px;">📦 <b>Ukuran:</b> {file_size_kb} KB</div>
+            <div style="color: #475569; margin-top: 4px;">🕒 <b>Last Update:</b> {last_mod_time}</div>
+            <div style="color: #475569; margin-top: 4px;">📦 <b>Size:</b> {file_size_kb} KB</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    refresh_clicked = st.button("🔄 Refresh Data dari Drive", type="primary", use_container_width=True)
+    refresh_clicked = st.button("🔄 Refresh Data from Drive", type="primary", use_container_width=True)
 
-    with st.expander("⚙️ Konfigurasi Google Drive", expanded=False):
+    with st.expander("⚙️ Google Drive Configuration", expanded=False):
         folder_id_input = st.text_input(
-            "Folder ID Google Drive",
+            "Google Drive Folder ID",
             value=DEFAULT_FOLDER_ID,
-            help="ID Folder Google Drive tempat file CSV disimpan.",
+            help="Google Drive Folder ID where CSV files are hosted.",
         )
         target_filename_input = st.text_input(
-            "Target Nama File CSV",
+            "Target CSV Filename",
             value=DEFAULT_TARGET_FILENAME,
-            help="Nama file CSV yang akan diekstrak dari folder.",
+            help="CSV target filename to ingest from the folder.",
         )
 
     st.markdown("---")
 
     # Filter Section
     st.markdown("### 🔍 Filter Data")
-    filter_search = st.text_input("Cari Nama / NIK", placeholder="Ketik nama atau NIK...", help="Pencarian cepat pada kolom NIK dan Nama.")
+    filter_search = st.text_input(
+        "Search Name / ID",
+        placeholder="Type employee name or ID...",
+        help="Quick search across Employee Name and ID."
+    )
     status_filter = st.selectbox(
-        "Status Engagement",
-        options=["Semua Status", "Engaged", "Non-Engaged"],
+        "Engagement Status",
+        options=["All Status", "Engaged", "Non-Engaged"],
         index=0,
-        help="Filter data berdasarkan status partisipasi engagement."
+        help="Filter records by engagement participation status."
     )
 
 
 # ==============================================================================
-# LOGIKA SINKRONISASI DRIVE (KICKED BY REFRESH BUTTON)
+# GOOGLE DRIVE SYNC LOGIC (TRIGGERED BY REFRESH BUTTON)
 # ==============================================================================
 if refresh_clicked:
-    with st.spinner("⏳ Mengunduh dan menyinkronkan data CSV dari Google Drive..."):
+    with st.spinner("⏳ Downloading and synchronizing CSV from Google Drive..."):
         success, message, result_path = download_klip_data_from_drive(
             folder_id=folder_id_input,
             target_filename=target_filename_input,
@@ -371,52 +375,52 @@ if refresh_clicked:
 
     if success:
         st.cache_data.clear()
-        st.toast("✅ Data berhasil diperbarui dari Google Drive!", icon="🎉")
-        st.success(f"**Berhasil!** {message}")
+        st.toast("✅ Data successfully synced from Google Drive!", icon="🎉")
+        st.success(f"**Success!** {message}")
         st.rerun()
     else:
-        st.error(f"**Sinkronisasi Gagal:**\n\n{message}")
+        st.error(f"**Sync Failed:**\n\n{message}")
         if not LATEST_CSV_PATH.exists():
-            st.info("💡 Klik tombol di bawah untuk membuat data demo simulasi agar dashboard dapat langsung dijelajahi.")
-            if st.button("⚡ Buat Data Demo (Simulasi)"):
+            st.info("💡 Click below to generate simulated demo data for immediate exploration.")
+            if st.button("⚡ Generate Demo Data"):
                 generate_sample_mock_data(LATEST_CSV_PATH)
                 st.cache_data.clear()
                 st.rerun()
 
 
 # ==============================================================================
-# LOAD DATA & VALIDASI
+# DATA INGESTION & VALIDATION
 # ==============================================================================
 df_raw = load_klip_data()
 
-# Handle jika file belum ada
+# Handle missing data file
 if df_raw is None or len(df_raw) == 0:
     st.markdown(
         """
         <div class="main-header">
             <h1>📊 KLIP Finance Engagement Dashboard</h1>
-            <p>Dashboard Analisis Partisipasi Engagement Karyawan - CORP FINANCE</p>
+            <p>Real-Time Corporate Finance Employee Engagement Monitoring</p>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    st.warning("⚠️ **File data belum tersedia di direktori lokal (`./data/klip_finance_latest.csv`).**")
+    st.warning("⚠️ **Data file is not available locally (`./data/klip_finance_latest.csv`).**")
     
     col_a, col_b = st.columns(2)
     with col_a:
         st.markdown(
             f"""
-            #### 1. Sinkronisasi dari Google Drive
-            Klik tombol di sidebar untuk mengunduh dari Folder ID:
+            #### 1. Sync from Google Drive
+            Click button in sidebar to download from Folder ID:
             - **Folder ID:** `{DEFAULT_FOLDER_ID}`
             - **Target File:** `{DEFAULT_TARGET_FILENAME}`
             
-            *(Pastikan akses folder telah diset menjadi **'Anyone with the link'** pada Google Drive)*
+            *(Ensure folder access is set to **'Anyone with the link'** on Google Drive)*
             """
         )
-        if st.button("📥 Unduh Sekarang dari Google Drive", type="primary"):
-            with st.spinner("Mengunduh..."):
+        if st.button("📥 Download Now from Google Drive", type="primary"):
+            with st.spinner("Downloading..."):
                 ok, msg, _ = download_klip_data_from_drive()
                 if ok:
                     st.cache_data.clear()
@@ -427,11 +431,11 @@ if df_raw is None or len(df_raw) == 0:
     with col_b:
         st.markdown(
             """
-            #### 2. Mode Simulasi / Data Demo
-            Gunakan data tiruan realistis untuk melihat dan menguji visualisasi dashboard secara langsung.
+            #### 2. Simulation / Demo Data Mode
+            Use realistic mock dataset to test visualizations instantly.
             """
         )
-        if st.button("🚀 Buat Data Demo (Simulasi)"):
+        if st.button("🚀 Generate Demo Data"):
             generate_sample_mock_data(LATEST_CSV_PATH)
             st.cache_data.clear()
             st.rerun()
@@ -444,22 +448,22 @@ if df_raw is None or len(df_raw) == 0:
 # ==============================================================================
 with st.sidebar:
     all_directorates = sorted([d for d in df_raw["Directorate"].dropna().unique().tolist() if str(d).strip() != "-"])
-    selected_dirs = st.multiselect("Direktorat", options=all_directorates, default=all_directorates)
+    selected_dirs = st.multiselect("Directorate", options=all_directorates, default=all_directorates)
 
-    # Filter Divisi berdasarkan Direktorat terpilih
+    # Filter Division options based on selected Directorates
     if selected_dirs and len(selected_dirs) < len(all_directorates):
         div_source = df_raw[df_raw["Directorate"].isin(selected_dirs)]
     else:
         div_source = df_raw
 
     all_div_options = sorted([d for d in div_source["Division"].dropna().unique().tolist() if str(d).strip() != "-"])
-    selected_divs = st.multiselect("Divisi", options=all_div_options, default=all_div_options)
+    selected_divs = st.multiselect("Division", options=all_div_options, default=all_div_options)
 
-    # Filter Perusahaan
+    # Filter Company options
     all_company_options = sorted([d for d in df_raw["Company_Name"].dropna().unique().tolist() if str(d).strip() != "-"])
-    selected_companies = st.multiselect("Perusahaan (Company)", options=all_company_options, default=all_company_options)
+    selected_companies = st.multiselect("Company", options=all_company_options, default=all_company_options)
 
-# Terapkan Filter ke DataFrame secara aman
+# Apply filters safely
 df_filtered = df_raw.copy()
 
 if selected_dirs and len(selected_dirs) < len(all_directorates):
@@ -471,7 +475,7 @@ if selected_divs and len(selected_divs) < len(all_div_options):
 if selected_companies and len(selected_companies) < len(all_company_options):
     df_filtered = df_filtered[df_filtered["Company_Name"].isin(selected_companies)]
 
-if status_filter and status_filter != "Semua Status":
+if status_filter and status_filter != "All Status":
     df_filtered = df_filtered[df_filtered["Engagement_Status"] == status_filter]
 
 if filter_search.strip():
@@ -492,12 +496,12 @@ st.markdown(
     f"""
     <div class="main-header">
         <h1>📊 KLIP Finance Engagement Dashboard 2026</h1>
-        <p>Monitoring Partisipasi & Analisis Engagement Karyawan Corporate Finance secara Real-Time via Google Drive Sync</p>
+        <p>Real-Time Corporate Finance Employee Engagement Monitoring via Google Drive Ingestion</p>
         <div class="header-pills">
             <span class="pill">🟢 <b>Data Source:</b> Google Drive Ingestion</span>
             <span class="pill">📂 <b>File:</b> {LATEST_CSV_PATH.name}</span>
             <span class="pill">🕒 <b>Last Sync:</b> {last_mod_time}</span>
-            <span class="pill">👥 <b>Dataset Size:</b> {total_all:,} Karyawan</span>
+            <span class="pill">👥 <b>Total Dataset:</b> {total_all:,} Employees</span>
         </div>
     </div>
     """,
@@ -521,10 +525,10 @@ with mcol1:
     st.markdown(
         f"""
         <div class="metric-card">
-            <div class="metric-title">Total Karyawan</div>
+            <div class="metric-title">TOTAL EMPLOYEES</div>
             <div class="metric-value">{total_filtered:,}</div>
             <div>
-                <span class="metric-badge badge-info">Dari {total_all:,} data total</span>
+                <span class="metric-badge badge-info">From {total_all:,} total records</span>
             </div>
         </div>
         """,
@@ -535,10 +539,10 @@ with mcol2:
     st.markdown(
         f"""
         <div class="metric-card" style="border-left: 4px solid #10B981;">
-            <div class="metric-title">Karyawan Engaged</div>
+            <div class="metric-title">ENGAGED</div>
             <div class="metric-value" style="color: #059669;">{engaged_count:,}</div>
             <div>
-                <span class="metric-badge badge-success">✓ {engagement_rate:.1f}% Partisipasi</span>
+                <span class="metric-badge badge-success">✓ {engagement_rate:.1f}% Participation</span>
             </div>
         </div>
         """,
@@ -549,10 +553,10 @@ with mcol3:
     st.markdown(
         f"""
         <div class="metric-card" style="border-left: 4px solid #EF4444;">
-            <div class="metric-title">Karyawan Non-Engaged</div>
+            <div class="metric-title">NON-ENGAGED</div>
             <div class="metric-value" style="color: #DC2626;">{non_engaged_count:,}</div>
             <div>
-                <span class="metric-badge badge-danger">✕ {non_engagement_rate:.1f}% Belum Ikut</span>
+                <span class="metric-badge badge-danger">✕ {non_engagement_rate:.1f}% Pending</span>
             </div>
         </div>
         """,
@@ -563,17 +567,17 @@ with mcol4:
     st.markdown(
         f"""
         <div class="metric-card" style="border-left: 4px solid #6366F1;">
-            <div class="metric-title">Cakupan Organisasi</div>
-            <div class="metric-value" style="color: #4F46E5;">{total_divs_count} <span style="font-size: 1rem; font-weight: 500; color: #64748B;">Divisi</span></div>
+            <div class="metric-title">ORGANIZATION COVERAGE</div>
+            <div class="metric-value" style="color: #4F46E5;">{total_divs_count} <span style="font-size: 1rem; font-weight: 500; color: #64748B;">Divisions</span></div>
             <div>
-                <span class="metric-badge badge-info">🏢 {total_dirs_count} Direktorat</span>
+                <span class="metric-badge badge-info">🏢 {total_dirs_count} Directorate</span>
             </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-# Role Breakdown (jika kolom role tersedia di dataset)
+# Role Breakdown Badges (if available in CSV)
 role_cols = [c for c in ["Leader", "Sponsor", "Member", "Fasilitator"] if c in df_filtered.columns]
 if role_cols:
     st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
@@ -583,7 +587,7 @@ if role_cols:
         st.markdown(
             f"""
             <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 10px; padding: 10px 14px; text-align: center;">
-                <span style="font-size: 0.75rem; color: #1E40AF; font-weight: 600; text-transform: uppercase;">👑 As a Leader</span>
+                <span style="font-size: 0.75rem; color: #1E40AF; font-weight: 600; text-transform: uppercase;">👑 AS A LEADER</span>
                 <div style="font-size: 1.35rem; font-weight: 800; color: #1D4ED8; margin-top: 2px;">{leader_cnt}</div>
             </div>
             """,
@@ -594,7 +598,7 @@ if role_cols:
         st.markdown(
             f"""
             <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px; padding: 10px 14px; text-align: center;">
-                <span style="font-size: 0.75rem; color: #166534; font-weight: 600; text-transform: uppercase;">⭐ As a Sponsor</span>
+                <span style="font-size: 0.75rem; color: #166534; font-weight: 600; text-transform: uppercase;">⭐ AS A SPONSOR</span>
                 <div style="font-size: 1.35rem; font-weight: 800; color: #15803D; margin-top: 2px;">{sponsor_cnt}</div>
             </div>
             """,
@@ -605,7 +609,7 @@ if role_cols:
         st.markdown(
             f"""
             <div style="background: #FAF5FF; border: 1px solid #E9D5FF; border-radius: 10px; padding: 10px 14px; text-align: center;">
-                <span style="font-size: 0.75rem; color: #6B21A8; font-weight: 600; text-transform: uppercase;">👥 As a Member</span>
+                <span style="font-size: 0.75rem; color: #6B21A8; font-weight: 600; text-transform: uppercase;">👥 AS A MEMBER</span>
                 <div style="font-size: 1.35rem; font-weight: 800; color: #7E22CE; margin-top: 2px;">{member_cnt}</div>
             </div>
             """,
@@ -616,7 +620,7 @@ if role_cols:
         st.markdown(
             f"""
             <div style="background: #FFF7ED; border: 1px solid #FED7AA; border-radius: 10px; padding: 10px 14px; text-align: center;">
-                <span style="font-size: 0.75rem; color: #9A3412; font-weight: 600; text-transform: uppercase;">🎯 As a Fasilitator</span>
+                <span style="font-size: 0.75rem; color: #9A3412; font-weight: 600; text-transform: uppercase;">🎯 AS A FASILITATOR</span>
                 <div style="font-size: 1.35rem; font-weight: 800; color: #C2410C; margin-top: 2px;">{fasil_cnt}</div>
             </div>
             """,
@@ -627,31 +631,31 @@ st.markdown("<br>", unsafe_allow_html=True)
 
 
 # ==============================================================================
-# VISUALISASI INTERAKTIF (EXECUTIVE DASHBOARD) - BEBAS OVERLAPPING & HIGH CONTRAST
+# VISUALIZATION (EXECUTIVE DASHBOARD) - INTERACTIVE & HIGH CONTRAST
 # ==============================================================================
 color_map = {"Engaged": "#10B981", "Non-Engaged": "#EF4444"}
 
 if total_filtered > 0:
-    # Header Keterangan Warna (No Clutter)
+    # Color Legend Indicator Badge
     st.markdown(
         """
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 4px 2px;">
-            <div style="font-size: 1.1rem; font-weight: 700; color: #0F172A;">📊 Analisis Visual Partisipasi</div>
+            <div style="font-size: 1.1rem; font-weight: 700; color: #0F172A;">📊 Visual Engagement Overview</div>
             <div style="font-size: 0.85rem; font-weight: 600; background: #FFFFFF; padding: 6px 14px; border-radius: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                <span style="color: #10B981; margin-right: 16px;">● <b>Engaged</b> (Ikut Serta)</span>
-                <span style="color: #EF4444;">● <b>Non-Engaged</b> (Belum Partisipasi)</span>
+                <span style="color: #10B981; margin-right: 16px;">● <b>Engaged</b> (Completed)</span>
+                <span style="color: #EF4444;">● <b>Non-Engaged</b> (Pending)</span>
             </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    # ROW 1: Donut Chart & Directorate / Overall Overview
+    # ROW 1: Donut Chart & Directorate Overview
     row1_col1, row1_col2 = st.columns([1, 1.3])
 
     with row1_col1:
         with st.container(border=True):
-            st.markdown('<div class="section-title">🎯 Rasio Partisipasi Keseluruhan</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-title">🎯 Overall Participation Rate</div>', unsafe_allow_html=True)
             status_counts = df_filtered["Engagement_Status"].value_counts().reset_index()
             status_counts.columns = ["Status", "Count"]
             
@@ -676,7 +680,7 @@ if total_filtered > 0:
                 showlegend=False,
                 annotations=[
                     dict(
-                        text=f"<b style='font-size:22px;color:#0F172A;'>{engagement_rate:.1f}%</b><br><span style='font-size:12px;color:#64748B;font-weight:600;'>Partisipasi</span>",
+                        text=f"<b style='font-size:22px;color:#0F172A;'>{engagement_rate:.1f}%</b><br><span style='font-size:12px;color:#64748B;font-weight:600;'>Participation</span>",
                         x=0.5,
                         y=0.5,
                         showarrow=False,
@@ -689,7 +693,7 @@ if total_filtered > 0:
 
     with row1_col2:
         with st.container(border=True):
-            st.markdown('<div class="section-title">🏢 Partisipasi per Direktorat</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-title">🏢 Participation by Directorate</div>', unsafe_allow_html=True)
             dir_grouped = (
                 df_filtered.groupby(["Directorate", "Engagement_Status"])
                 .size()
@@ -705,7 +709,7 @@ if total_filtered > 0:
                 barmode="stack",
                 color_discrete_map=color_map,
                 text="Count",
-                labels={"Count": "Jumlah Karyawan", "Directorate": "Direktorat", "Engagement_Status": "Status"},
+                labels={"Count": "Employees", "Directorate": "Directorate", "Engagement_Status": "Status"},
             )
             fig_dir.update_traces(
                 textposition="inside",
@@ -718,7 +722,7 @@ if total_filtered > 0:
                 xaxis=dict(
                     gridcolor="#E2E8F0",
                     tickfont=dict(color="#1E293B", size=11, family="Plus Jakarta Sans, sans-serif"),
-                    title=dict(text="Jumlah Karyawan", font=dict(color="#0F172A", size=12)),
+                    title=dict(text="Number of Employees", font=dict(color="#0F172A", size=12)),
                 ),
                 yaxis=dict(
                     autorange="reversed",
@@ -732,45 +736,118 @@ if total_filtered > 0:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # ROW 2: Division Breakdown & Top 5 Divisi Butuh Perhatian
-    row2_col1, row2_col2 = st.columns([1.5, 1.1])
+    # ROW 2: SINGLE MAIN INTERACTIVE DIVISION CHART (FULL WIDTH)
+    with st.container(border=True):
+        st.markdown('<div class="section-title">📈 Division Engagement Breakdown</div>', unsafe_allow_html=True)
+        
+        # Interactive Controls
+        ctrl_col1, ctrl_col2, _ = st.columns([1.5, 1.5, 3])
+        with ctrl_col1:
+            div_status_view = st.selectbox(
+                "Status View",
+                options=["All Status", "Engaged Only", "Non-Engaged Only"],
+                index=0,
+                key="div_status_view",
+                help="Select which status category to display on the chart."
+            )
+        with ctrl_col2:
+            div_sort_order = st.selectbox(
+                "Sort Order",
+                options=["Highest to Lowest", "Lowest to Highest"],
+                index=0,
+                key="div_sort_order",
+                help="Sort divisions by employee volume."
+            )
 
-    with row2_col1:
-        with st.container(border=True):
-            st.markdown('<div class="section-title">📈 Distribusi Engagement per Divisi</div>', unsafe_allow_html=True)
+        ascending_sort = (div_sort_order == "Lowest to Highest")
+
+        if div_status_view == "Engaged Only":
+            div_data = df_filtered[df_filtered["Engagement_Status"] == "Engaged"]
+            if len(div_data) > 0:
+                div_grouped = div_data.groupby("Division").size().reset_index(name="Count")
+                div_grouped["Engagement_Status"] = "Engaged"
+                div_grouped = div_grouped.sort_values(by="Count", ascending=ascending_sort)
+                div_order = div_grouped["Division"].tolist()
+
+                fig_div = px.bar(
+                    div_grouped,
+                    x="Division",
+                    y="Count",
+                    color="Engagement_Status",
+                    color_discrete_map=color_map,
+                    text="Count",
+                    category_orders={"Division": div_order},
+                    labels={"Count": "Employees", "Division": "Division", "Engagement_Status": "Status"},
+                )
+                fig_div.update_traces(
+                    textposition="outside",
+                    textfont=dict(color="#059669", size=11, family="Plus Jakarta Sans, sans-serif"),
+                    cliponaxis=False,
+                )
+            else:
+                fig_div = None
+
+        elif div_status_view == "Non-Engaged Only":
+            div_data = df_filtered[df_filtered["Engagement_Status"] == "Non-Engaged"]
+            if len(div_data) > 0:
+                div_grouped = div_data.groupby("Division").size().reset_index(name="Count")
+                div_grouped["Engagement_Status"] = "Non-Engaged"
+                div_grouped = div_grouped.sort_values(by="Count", ascending=ascending_sort)
+                div_order = div_grouped["Division"].tolist()
+
+                fig_div = px.bar(
+                    div_grouped,
+                    x="Division",
+                    y="Count",
+                    color="Engagement_Status",
+                    color_discrete_map=color_map,
+                    text="Count",
+                    category_orders={"Division": div_order},
+                    labels={"Count": "Employees", "Division": "Division", "Engagement_Status": "Status"},
+                )
+                fig_div.update_traces(
+                    textposition="outside",
+                    textfont=dict(color="#DC2626", size=11, family="Plus Jakarta Sans, sans-serif"),
+                    cliponaxis=False,
+                )
+            else:
+                fig_div = None
+
+        else:  # "All Status"
+            # Calculate total volume per division for sorting
+            div_totals = df_filtered.groupby("Division").size().reset_index(name="Total")
+            div_totals = div_totals.sort_values(by="Total", ascending=ascending_sort)
+            div_order = div_totals["Division"].tolist()
+
             div_grouped = (
                 df_filtered.groupby(["Division", "Engagement_Status"])
                 .size()
                 .reset_index(name="Count")
             )
-            top_divs = (
-                df_filtered["Division"]
-                .value_counts()
-                .head(10)
-                .index.tolist()
-            )
-            div_grouped_filtered = div_grouped[div_grouped["Division"].isin(top_divs)]
 
             fig_div = px.bar(
-                div_grouped_filtered,
+                div_grouped,
                 x="Division",
                 y="Count",
                 color="Engagement_Status",
                 barmode="stack",
                 color_discrete_map=color_map,
                 text="Count",
-                labels={"Count": "Jumlah Karyawan", "Division": "Divisi", "Engagement_Status": "Status"},
+                category_orders={"Division": div_order},
+                labels={"Count": "Employees", "Division": "Division", "Engagement_Status": "Status"},
             )
             fig_div.update_traces(
                 textposition="inside",
                 textfont=dict(color="#FFFFFF", size=10, family="Plus Jakarta Sans, sans-serif"),
             )
+
+        if fig_div is not None:
             fig_div.update_layout(
-                margin=dict(t=30, b=80, l=40, r=20),
-                height=380,
+                margin=dict(t=30, b=90, l=40, r=20),
+                height=420,
                 showlegend=False,
                 xaxis=dict(
-                    tickangle=-25,
+                    tickangle=-45,
                     gridcolor="#E2E8F0",
                     tickfont=dict(color="#1E293B", size=11, family="Plus Jakarta Sans, sans-serif"),
                     title=None,
@@ -778,65 +855,17 @@ if total_filtered > 0:
                 yaxis=dict(
                     gridcolor="#E2E8F0",
                     tickfont=dict(color="#1E293B", size=11, family="Plus Jakarta Sans, sans-serif"),
-                    title=dict(text="Jumlah Karyawan", font=dict(color="#0F172A", size=12)),
+                    title=dict(text="Number of Employees", font=dict(color="#0F172A", size=12)),
                 ),
                 plot_bgcolor="rgba(0,0,0,0)",
                 paper_bgcolor="rgba(0,0,0,0)",
             )
             st.plotly_chart(fig_div, use_container_width=True)
-
-    with row2_col2:
-        with st.container(border=True):
-            st.markdown('<div class="section-title" style="color:#DC2626;">⚠️ Top Divisi Belum Partisipasi</div>', unsafe_allow_html=True)
-            
-            # Hitung non-engaged per divisi
-            non_eng_df = df_filtered[df_filtered["Engagement_Status"] == "Non-Engaged"]
-            if len(non_eng_df) > 0:
-                top_non_eng = (
-                    non_eng_df["Division"]
-                    .value_counts()
-                    .reset_index()
-                )
-                top_non_eng.columns = ["Division", "Non_Engaged_Count"]
-                top_non_eng = top_non_eng.head(5)
-
-                fig_attention = px.bar(
-                    top_non_eng,
-                    y="Division",
-                    x="Non_Engaged_Count",
-                    orientation="h",
-                    color_discrete_sequence=["#EF4444"],
-                    text="Non_Engaged_Count",
-                    labels={"Non_Engaged_Count": "Belum Partisipasi", "Division": "Divisi"},
-                )
-                fig_attention.update_traces(
-                    textposition="outside",
-                    textfont=dict(color="#991B1B", size=11, family="Plus Jakarta Sans, sans-serif"),
-                    cliponaxis=False,
-                )
-                fig_attention.update_layout(
-                    margin=dict(t=30, b=40, l=20, r=40),
-                    height=380,
-                    showlegend=False,
-                    xaxis=dict(
-                        gridcolor="#E2E8F0",
-                        tickfont=dict(color="#1E293B", size=11, family="Plus Jakarta Sans, sans-serif"),
-                        title=dict(text="Jumlah Belum Ikut", font=dict(color="#0F172A", size=12)),
-                    ),
-                    yaxis=dict(
-                        autorange="reversed",
-                        tickfont=dict(color="#1E293B", size=11, family="Plus Jakarta Sans, sans-serif"),
-                        title=None,
-                    ),
-                    plot_bgcolor="rgba(0,0,0,0)",
-                    paper_bgcolor="rgba(0,0,0,0)",
-                )
-                st.plotly_chart(fig_attention, use_container_width=True)
-            else:
-                st.success("🎉 Luar biasa! Seluruh karyawan pada filter saat ini telah berstatus **Engaged** (100% Partisipasi).")
+        else:
+            st.info("ℹ️ No records found matching the selected status view.")
 
 else:
-    st.info("ℹ️ Tidak ada data yang cocok dengan kriteria filter saat ini. Coba sesuaikan filter di sidebar.")
+    st.info("ℹ️ No records match the current filter criteria. Try adjusting the sidebar filters.")
 
 
 # ==============================================================================
@@ -847,22 +876,22 @@ st.markdown("---")
 table_col1, table_col2, table_col3 = st.columns([2.2, 1.8, 1])
 
 with table_col1:
-    st.markdown('<div class="section-title" style="margin-bottom:0;">📋 Detail Data Karyawan</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title" style="margin-bottom:0;">📋 Employee Engagement Details</div>', unsafe_allow_html=True)
 
 with table_col2:
     only_non_engaged = st.checkbox(
-        "🔴 **Tampilkan Hanya Non-Engaged**",
+        "🔴 **Show Non-Engaged Only**",
         value=False,
-        help="Filter instan untuk menampilkan daftar seluruh karyawan yang belum berpartisipasi.",
+        help="Instant filter to show all employees who have not participated yet.",
     )
 
-# Filter tabel berdasarkan toggle Non-Engaged
+# Filter table based on Non-Engaged toggle
 df_table = df_filtered[df_filtered["Engagement_Status"] == "Non-Engaged"] if only_non_engaged else df_filtered
 
 with table_col3:
     csv_data = df_table.to_csv(index=False).encode("utf-8")
     st.download_button(
-        label="📥 Unduh Data (CSV)",
+        label="📥 Export Data (CSV)",
         data=csv_data,
         file_name=f"klip_finance_{'non_engaged_' if only_non_engaged else ''}export_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
         mime="text/csv",
@@ -870,8 +899,8 @@ with table_col3:
     )
 
 st.caption(
-    f"Menampilkan **{len(df_table):,}** baris data"
-    + (" *(⚠️ Filter: Hanya Karyawan Non-Engaged)*" if only_non_engaged else f" dari total **{len(df_raw):,}** karyawan.")
+    f"Showing **{len(df_table):,}** records"
+    + (" *(⚠️ Filter: Non-Engaged Only)*" if only_non_engaged else f" from total **{len(df_raw):,}** employees.")
 )
 
 display_cols = [
@@ -899,26 +928,26 @@ st.dataframe(
     use_container_width=True,
     height=450,
     column_config={
-        "Loc_Type": st.column_config.TextColumn("Lokasi (Loc)", width="small"),
+        "Loc_Type": st.column_config.TextColumn("Location", width="small"),
         "Employee_ID": st.column_config.TextColumn("NIK / ID", width="medium"),
-        "Employee_Name": st.column_config.TextColumn("Nama Karyawan", width="large"),
+        "Employee_Name": st.column_config.TextColumn("Employee Name", width="large"),
         "Status_PA": st.column_config.TextColumn("Status PA", width="small"),
         "Engagement_Status": st.column_config.TextColumn("Status", width="medium"),
         "Leader": st.column_config.NumberColumn("Leader", width="small", format="%d"),
         "Sponsor": st.column_config.NumberColumn("Sponsor", width="small", format="%d"),
         "Member": st.column_config.NumberColumn("Member", width="small", format="%d"),
         "Fasilitator": st.column_config.NumberColumn("Fasilitator", width="small", format="%d"),
-        "Directorate": st.column_config.TextColumn("Direktorat", width="medium"),
-        "Division": st.column_config.TextColumn("Divisi", width="large"),
-        "Company_Name": st.column_config.TextColumn("Perusahaan", width="medium"),
+        "Directorate": st.column_config.TextColumn("Directorate", width="medium"),
+        "Division": st.column_config.TextColumn("Division", width="large"),
+        "Company_Name": st.column_config.TextColumn("Company", width="medium"),
         "Engagement_Score": st.column_config.ProgressColumn(
             "Engagement Score",
-            help="Skor Partisipasi Karyawan (0 - 100)",
+            help="Employee Participation Score (0 - 100)",
             format="%d",
             min_value=0,
             max_value=100,
         ),
-        "Completion_Date": st.column_config.TextColumn("Tgl Selesai", width="small"),
+        "Completion_Date": st.column_config.TextColumn("Completion Date", width="small"),
     },
     hide_index=True,
 )
