@@ -149,6 +149,19 @@ st.markdown(
         align-items: center;
         gap: 6px;
     }
+
+    /* Perluas tinggi maksimum menu dropdown/selectbox saat diklik */
+    div[data-baseweb="popover"] div[role="listbox"],
+    div[data-baseweb="select"] ul,
+    div[data-baseweb="popover"] ul,
+    ul[data-baseweb="menu"] {
+        max-height: 500px !important;
+    }
+
+    /* Pastikan popover mengapung di atas elemen sidebar tanpa terpotong */
+    div[data-baseweb="popover"] {
+        z-index: 999999 !important;
+    }
     </style>
     """,
     unsafe_allow_html=True,
