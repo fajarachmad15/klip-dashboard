@@ -150,16 +150,20 @@ st.markdown(
         gap: 6px;
     }
 
+    /* Berikan ruang scroll bawah masif pada sidebar agar dropdown tidak pernah mentok */
+    section[data-testid="stSidebar"] div[data-testid="stSidebarContent"],
+    section[data-testid="stSidebar"] .block-container {
+        padding-bottom: 400px !important;
+    }
+
     /* Perluas tinggi maksimum menu dropdown/selectbox saat diklik */
+    div[data-baseweb="popover"],
+    div[data-baseweb="popover"] > div,
     div[data-baseweb="popover"] div[role="listbox"],
     div[data-baseweb="select"] ul,
     div[data-baseweb="popover"] ul,
     ul[data-baseweb="menu"] {
-        max-height: 500px !important;
-    }
-
-    /* Pastikan popover mengapung di atas elemen sidebar tanpa terpotong */
-    div[data-baseweb="popover"] {
+        max-height: 480px !important;
         z-index: 999999 !important;
     }
     </style>
@@ -356,19 +360,43 @@ with st.sidebar:
 
     st.markdown("---")
 
+    # Load data for dynamic filter populating
+    df_raw = load_klip_data()
+
     # Filter Section
     st.markdown("### 🔍 Filter Data")
-    filter_search = st.text_input(
-        "Search Name / ID",
-        placeholder="Type employee name or ID...",
-        help="Quick search across Employee Name and ID."
+
+    # 1. Division Filter (Positioned first with ample room to open upward/downward)
+    if df_raw is not None and len(df_raw) > 0 and "Division" in df_raw.columns:
+        all_divisions = sorted([d for d in df_raw["Division"].dropna().unique().tolist() if str(d).strip() not in ["-", ""]])
+        division_options = ["All Division"] + all_divisions
+    else:
+        division_options = ["All Division"]
+
+    selected_division = st.selectbox(
+        "Division",
+        options=division_options,
+        index=0,
+        help="Filter records by a specific division or select 'All Division' to view everything.",
     )
+
+    # 2. Engagement Status Filter
     status_filter = st.selectbox(
         "Engagement Status",
         options=["All Status", "Engaged", "Non-Engaged"],
         index=0,
         help="Filter records by engagement participation status."
     )
+
+    # 3. Search Filter
+    filter_search = st.text_input(
+        "Search Name / ID",
+        placeholder="Type employee name or ID...",
+        help="Quick search across Employee Name and ID."
+    )
+
+    # Spacer at bottom of sidebar to prevent any dropdown clipping
+    st.markdown("<div style='height: 350px;'></div>", unsafe_allow_html=True)
 
 
 # ==============================================================================
@@ -398,10 +426,8 @@ if refresh_clicked:
 
 
 # ==============================================================================
-# DATA INGESTION & VALIDATION
+# DATA VALIDATION & FILTERING
 # ==============================================================================
-df_raw = load_klip_data()
-
 # Handle missing data file
 if df_raw is None or len(df_raw) == 0:
     st.markdown(
@@ -451,19 +477,6 @@ if df_raw is None or len(df_raw) == 0:
 
     st.stop()
 
-
-# ==============================================================================
-# DYNAMIC FILTERING
-# ==============================================================================
-with st.sidebar:
-    all_divisions = sorted([d for d in df_raw["Division"].dropna().unique().tolist() if str(d).strip() not in ["-", ""]])
-    division_options = ["All Division"] + all_divisions
-    selected_division = st.selectbox(
-        "Division",
-        options=division_options,
-        index=0,
-        help="Filter records by a specific division or select 'All Division' to view everything.",
-    )
 
 # Apply filters safely
 df_filtered = df_raw.copy()
