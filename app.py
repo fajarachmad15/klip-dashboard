@@ -174,34 +174,55 @@ def load_klip_data(file_path: str = str(LATEST_CSV_PATH)) -> Optional[pd.DataFra
         except Exception:
             df = pd.read_csv(csv_file, sep=";")
 
-        # Standardisasi Nama Kolom (Case-insensitive mapping)
+        # Standardisasi Nama Kolom secara cerdas tanpa duplikasi target
         col_mapping = {}
+        assigned_targets = set()
+
         for col in df.columns:
-            clean = col.strip().lower().replace(" ", "_").replace("/", "_").replace(".", "_")
-            if any(k == clean or k in clean for k in ["employee_id", "nik", "id_karyawan", "no_pegawai", "emp_id"]):
-                col_mapping[col] = "Employee_ID"
-            elif any(k == clean or k in clean for k in ["employee_name", "nama_karyawan", "nama", "employee", "name"]):
-                col_mapping[col] = "Employee_Name"
-            elif any(k == clean or k in clean for k in ["company_name", "company", "perusahaan", "pt"]):
-                col_mapping[col] = "Company_Name"
-            elif any(k == clean or k in clean for k in ["directorate", "direktorat", "dir"]):
-                col_mapping[col] = "Directorate"
-            elif any(k == clean or k in clean for k in ["division", "divisi", "div"]):
-                col_mapping[col] = "Division"
-            elif any(k in clean for k in ["group_bu", "bu_corp", "bu", "group"]):
-                col_mapping[col] = "Group_BU_CORP"
-            elif any(k in clean for k in ["status_engagement", "engagement_status", "klip_status", "status", "engagement"]):
-                col_mapping[col] = "Engagement_Status"
+            clean = str(col).strip().lower().replace(" ", "_").replace("/", "_").replace(".", "_")
+            target = None
+
+            # Prioritas 1: Company / Perusahaan (Dicek sebelum Name)
+            if clean in ["company_name", "company", "perusahaan", "pt", "holding"] or ("company" in clean or "perusahaan" in clean):
+                target = "Company_Name"
+            # Prioritas 2: Employee ID / NIK
+            elif clean in ["employee_id", "nik", "id_karyawan", "no_pegawai", "emp_id"] or ("nik" in clean or "id_karyawan" in clean or "emp_id" in clean):
+                target = "Employee_ID"
+            # Prioritas 3: Employee Name / Nama Karyawan (Cek agar tidak bentrok dengan Company Name)
+            elif clean in ["employee_name", "nama_karyawan", "nama_pegawai", "nama", "employee"] or ("employee" in clean and "id" not in clean) or ("nama" in clean and "perusahaan" not in clean):
+                target = "Employee_Name"
+            # Prioritas 4: Directorate
+            elif clean in ["directorate", "direktorat", "dir"] or ("directorate" in clean or "direktorat" in clean):
+                target = "Directorate"
+            # Prioritas 5: Division
+            elif clean in ["division", "divisi", "div"] or ("division" in clean or "divisi" in clean):
+                target = "Division"
+            # Prioritas 6: Group BU / CORP
+            elif any(k in clean for k in ["group_bu", "bu_corp", "group_corp", "bu", "group"]):
+                target = "Group_BU_CORP"
+            # Prioritas 7: Engagement Status
+            elif clean in ["engagement", "status", "engagement_status", "status_engagement", "klip_status", "klip_engagement"] or ("engagement" in clean or "status" in clean):
+                target = "Engagement_Status"
+            # Prioritas 8: Engagement Score
             elif any(k in clean for k in ["score", "nilai", "skor"]):
-                col_mapping[col] = "Engagement_Score"
+                target = "Engagement_Score"
+            # Prioritas 9: Location
             elif any(k in clean for k in ["loc", "lokasi", "location"]):
-                col_mapping[col] = "Loc_Type"
+                target = "Loc_Type"
+            # Prioritas 10: Completion Date
             elif any(k in clean for k in ["date", "tanggal", "completion"]):
-                col_mapping[col] = "Completion_Date"
+                target = "Completion_Date"
+
+            if target and target not in assigned_targets:
+                col_mapping[col] = target
+                assigned_targets.add(target)
 
         df = df.rename(columns=col_mapping)
 
-        # Fallback kolom jika tidak ada
+        # Hapus kolom duplikat jika ada
+        df = df.loc[:, ~df.columns.duplicated()].copy()
+
+        # Fallback kolom jika tidak ada di dataset
         if "Employee_ID" not in df.columns:
             df["Employee_ID"] = [f"EMP-{1000 + i}" for i in range(len(df))]
         if "Employee_Name" not in df.columns:
@@ -231,12 +252,20 @@ def load_klip_data(file_path: str = str(LATEST_CSV_PATH)) -> Optional[pd.DataFra
                 return "Engaged"
             return "Non-Engaged"
 
-        df["Engagement_Status"] = df["Engagement_Status"].apply(normalize_status)
+        # Normalisasi Engagement_Status aman
+        if "Engagement_Status" in df.columns:
+            s_stat = df["Engagement_Status"]
+            if isinstance(s_stat, pd.DataFrame):
+                s_stat = s_stat.iloc[:, 0]
+            df["Engagement_Status"] = s_stat.apply(normalize_status)
 
-        # Bersihkan spasi string
-        for col in ["Employee_Name", "Directorate", "Division", "Company_Name"]:
+        # Bersihkan spasi string untuk kolom teks penting
+        for col in ["Employee_ID", "Employee_Name", "Directorate", "Division", "Company_Name"]:
             if col in df.columns:
-                df[col] = df[col].fillna("Unknown").astype(str).str.strip()
+                s_col = df[col]
+                if isinstance(s_col, pd.DataFrame):
+                    s_col = s_col.iloc[:, 0]
+                df[col] = s_col.fillna("Unknown").astype(str).str.strip()
 
         return df
 
@@ -427,8 +456,8 @@ if status_filter != "Semua Status":
 if filter_search.strip():
     kw = filter_search.strip().lower()
     df_filtered = df_filtered[
-        df_filtered["Employee_Name"].str.lower().str.contains(kw, na=False)
-        | df_filtered["Employee_ID"].str.lower().str.contains(kw, na=False)
+        df_filtered["Employee_Name"].astype(str).str.lower().str.contains(kw, na=False)
+        | df_filtered["Employee_ID"].astype(str).str.lower().str.contains(kw, na=False)
     ]
 
 
