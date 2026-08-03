@@ -197,7 +197,7 @@ def load_klip_data(file_path: str = str(LATEST_CSV_PATH)) -> Optional[pd.DataFra
                 col_mapping[col] = "Division"
             elif any(k in clean for k in ["group_bu", "bu_corp", "bu", "group"]):
                 col_mapping[col] = "Group_BU_CORP"
-            elif any(k in clean for k in ["status_engagement", "engagement_status", "klip_status", "status"]):
+            elif any(k in clean for k in ["status_engagement", "engagement_status", "klip_status", "status", "engagement"]):
                 col_mapping[col] = "Engagement_Status"
             elif any(k in clean for k in ["score", "nilai", "skor"]):
                 col_mapping[col] = "Engagement_Score"
