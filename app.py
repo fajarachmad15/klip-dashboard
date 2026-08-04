@@ -164,22 +164,15 @@ st.markdown(
         max-width: 95% !important;
     }
 
-    /* Force BaseWeb Popover (Dropdown Streamlit) to open downwards */
-    div[data-baseweb="popover"] {
-        top: 100% !important;
-        bottom: auto !important;
-        transform: none !important;
-        margin-top: 6px !important;
-        z-index: 999999 !important;
-    }
-    
-    /* Set max height and scroll for clean dropdown view */
-    div[data-baseweb="popover"] ul[role="listbox"],
+    /* Perluas tinggi maksimum menu dropdown/selectbox saat diklik */
+    div[data-baseweb="popover"],
+    div[data-baseweb="popover"] > div,
     div[data-baseweb="popover"] div[role="listbox"],
     div[data-baseweb="select"] ul,
+    div[data-baseweb="popover"] ul,
     ul[data-baseweb="menu"] {
-        max-height: 380px !important;
-        overflow-y: auto !important;
+        max-height: 480px !important;
+        z-index: 999999 !important;
     }
 
     /* Optimasi Tampilan Layar HP / Mobile */
@@ -464,10 +457,7 @@ with st.container(border=True):
     fcol1, fcol2, fcol3, fcol4 = st.columns([1.2, 1, 1.2, 1])
 
     with fcol1:
-        if "Division_Short" in df_raw.columns:
-            short_divisions = sorted([d for d in df_raw["Division_Short"].dropna().unique().tolist() if str(d).strip() not in ["-", ""]])
-            division_options = ["All Division"] + short_divisions
-        elif "Division" in df_raw.columns:
+        if "Division" in df_raw.columns:
             all_divisions = sorted([d for d in df_raw["Division"].dropna().unique().tolist() if str(d).strip() not in ["-", ""]])
             division_options = ["All Division"] + all_divisions
         else:
@@ -526,10 +516,7 @@ if refresh_clicked:
 df_filtered = df_raw.copy()
 
 if selected_division and selected_division != "All Division":
-    if "Division_Short" in df_filtered.columns and selected_division in df_filtered["Division_Short"].values:
-        df_filtered = df_filtered[df_filtered["Division_Short"] == selected_division]
-    elif "Division" in df_filtered.columns:
-        df_filtered = df_filtered[df_filtered["Division"] == selected_division]
+    df_filtered = df_filtered[df_filtered["Division"] == selected_division]
 
 if status_filter and status_filter != "All Status":
     df_filtered = df_filtered[df_filtered["Engagement_Status"] == status_filter]
