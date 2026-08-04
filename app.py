@@ -468,6 +468,20 @@ def load_submission_data() -> Optional[pd.DataFrame]:
         if "Stage" in df.columns:
             df["Stage"] = df["Stage"].fillna("PROPOSAL").astype(str).str.strip().str.upper()
 
+        # Ekstraksi Category (SLIM vs ACT)
+        def extract_category(val):
+            val_str = str(val).upper()
+            if "SLIM" in val_str:
+                return "SLIM"
+            if "ACT" in val_str:
+                return "ACT"
+            return "OTHER"
+
+        if "No.KLIP" in df.columns:
+            df["Category"] = df["No.KLIP"].apply(extract_category)
+        else:
+            df["Category"] = "SLIM"
+
         # Ekstraksi bulan dari kolom Submitted
         month_map = {
             "jan": "Januari", "feb": "Februari", "mar": "Maret", "apr": "April",
@@ -488,7 +502,7 @@ def load_submission_data() -> Optional[pd.DataFrame]:
         else:
             df["Month"] = "Januari"
 
-        for text_col in ["No.KLIP", "Title", "Leader_Name", "Fasilitator_Name", "Function", "Status", "BU/Corp"]:
+        for text_col in ["No.KLIP", "Title", "Leader_Name", "Fasilitator_Name", "Function", "Status", "BU/Corp", "Category"]:
             if text_col in df.columns:
                 df[text_col] = df[text_col].fillna("-").astype(str).str.strip()
 
@@ -1190,100 +1204,226 @@ elif selected_page == "Submission 2026":
 
     st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
-    # Charts: Side-by-Side
-    c1, c2 = st.columns([5, 7])
+    # 1. Top Section: #KLIP Submission by Month (Stacked Bar)
+    with st.container(border=True):
+        st.markdown('<div class="section-title">📊 #KLIP Submission by Month</div>', unsafe_allow_html=True)
+        if tot_sub > 0 and "Month" in df_sub.columns:
+            months_order = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus"]
+            stages_meta = [
+                ("PROPOSAL", "Proposal", "#F97316"),
+                ("IMPLEMENTATION", "Implementation", "#16A34A"),
+                ("CLOSING", "Closing", "#38BDF8"),
+                ("FINISHED", "Finished", "#2563EB"),
+            ]
 
-    with c1:
-        with st.container(border=True):
-            st.markdown('<div class="section-title">📊 KLIP by Stage Distribution</div>', unsafe_allow_html=True)
-            if tot_sub > 0:
-                stage_counts = df_sub["Stage"].value_counts().reset_index()
-                stage_counts.columns = ["Stage", "Count"]
+            grouped = df_sub.groupby(["Month", "Stage"]).size().unstack(fill_value=0)
+            grouped = grouped.reindex(index=months_order, fill_value=0)
 
-                stage_colors = {
-                    "PROPOSAL": "#FCA5A5",
-                    "IMPLEMENTATION": "#F87171",
-                    "CLOSING": "#EF4444",
-                    "FINISHED": "#2563EB",
-                }
+            fig_sub_month = go.Figure()
+            for stg_key, stg_lbl, stg_col in stages_meta:
+                vals = [int(grouped.loc[m, stg_key]) if stg_key in grouped.columns else 0 for m in months_order]
+                fig_sub_month.add_trace(go.Bar(
+                    name=stg_lbl,
+                    x=months_order,
+                    y=vals,
+                    marker_color=stg_col,
+                ))
 
-                fig_stage = px.pie(
-                    stage_counts,
-                    names="Stage",
-                    values="Count",
-                    color="Stage",
-                    color_discrete_map=stage_colors,
-                    hole=0.45,
-                )
-                fig_stage.update_traces(
-                    textinfo="percent+value",
-                    textposition="inside",
-                    insidetextorientation="horizontal",
-                    texttemplate="<b>%{value}</b><br>(%{percent:.1%})",
-                    insidetextfont=dict(size=13, color="#FFFFFF", family="Plus Jakarta Sans", weight="bold"),
-                    marker=dict(line=dict(color="#FFFFFF", width=2)),
-                )
-                fig_stage.update_layout(
-                    showlegend=True,
-                    legend=dict(orientation="h", yanchor="bottom", y=-0.15, xanchor="center", x=0.5, font=dict(family="Plus Jakarta Sans", size=12)),
-                    margin=dict(t=10, b=30, l=10, r=10),
-                    height=300,
-                )
-                st.plotly_chart(fig_stage, use_container_width=True, config={"displayModeBar": False})
-            else:
-                st.info("No stage distribution data available.")
+            totals = [int(grouped.loc[m].sum()) if m in grouped.index else 0 for m in months_order]
+            for m, tot in zip(months_order, totals):
+                if tot > 0:
+                    fig_sub_month.add_annotation(
+                        x=m, y=tot,
+                        text=f"<b>{tot}</b>",
+                        showarrow=False,
+                        yshift=10,
+                        font=dict(family="Plus Jakarta Sans", size=12, color="#2563EB", weight="bold")
+                    )
 
-    with c2:
-        with st.container(border=True):
-            st.markdown('<div class="section-title">📅 Submission by Month (Jan – Aug 2026)</div>', unsafe_allow_html=True)
-            if tot_sub > 0 and "Month" in df_sub.columns:
-                month_order = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
-                month_counts = df_sub["Month"].value_counts().reindex([m for m in month_order if m in df_sub["Month"].values]).fillna(0).reset_index()
-                month_counts.columns = ["Month", "Count"]
-
-                fig_month = px.bar(
-                    month_counts,
-                    x="Month",
-                    y="Count",
-                    text="Count",
-                    color_discrete_sequence=["#2563EB"],
-                )
-                fig_month.update_traces(
-                    textposition="inside",
-                    insidetextfont=dict(size=12, color="#FFFFFF", family="Plus Jakarta Sans", weight="bold"),
-                )
-
-                max_m = month_counts["Count"].max() if len(month_counts) > 0 else 5
-                for _, r in month_counts.iterrows():
-                    if r["Count"] > 0:
-                        fig_month.add_annotation(
-                            x=r["Month"],
-                            y=r["Count"],
-                            text=f"<b>{int(r['Count'])}</b>",
-                            showarrow=False,
-                            yshift=12,
-                            font=dict(family="Plus Jakarta Sans", size=12, color="#0F172A", weight="bold"),
-                        )
-
-                fig_month.update_layout(
-                    yaxis=dict(visible=False, showgrid=False, zeroline=False, range=[0, max_m * 1.3]),
-                    xaxis=dict(showgrid=False, title=None, tickfont=dict(family="Plus Jakarta Sans", size=11, color="#0F172A", weight="bold")),
-                    margin=dict(t=30, b=20, l=10, r=10),
-                    height=300,
-                )
-                st.plotly_chart(fig_month, use_container_width=True, config={"displayModeBar": False})
-            else:
-                st.info("No monthly trend data available.")
+            max_tot = max(totals) if totals else 10
+            fig_sub_month.update_layout(
+                barmode="stack",
+                showlegend=True,
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0.01, font=dict(family="Plus Jakarta Sans", size=12)),
+                yaxis=dict(showgrid=True, gridcolor="#F1F5F9", range=[0, max(max_tot * 1.25, 5)], title=None),
+                xaxis=dict(showgrid=False, title=None, tickfont=dict(family="Plus Jakarta Sans", size=11, color="#0F172A", weight="bold")),
+                margin=dict(t=35, b=20, l=10, r=10),
+                height=300,
+                plot_bgcolor="rgba(0,0,0,0)",
+                paper_bgcolor="rgba(0,0,0,0)",
+            )
+            st.plotly_chart(fig_sub_month, use_container_width=True, config={"displayModeBar": False})
+        else:
+            st.info("No monthly trend data available.")
 
     st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
-    # Table Submissions
+    # 2. Middle Section: Category YoY Table + Category Donut + Stage Donut
+    c_yoy, c_cat, c_stg = st.columns([5.2, 3.4, 3.4])
+
+    with c_yoy:
+        with st.container(border=True):
+            st.markdown('<div class="section-title">📊 #KLIP Category by Stage YoY</div>', unsafe_allow_html=True)
+            
+            # Prepare rows
+            cat_rows_html = []
+            max_sub = max(tot_sub, 1)
+            
+            # SLIM row
+            slim_sub = len(df_sub[df_sub["Category"] == "SLIM"])
+            slim_reg = len(df_sub[(df_sub["Category"] == "SLIM") & (df_sub["Stage"].isin(["IMPLEMENTATION", "CLOSING", "FINISHED"]))])
+            slim_fin = len(df_sub[(df_sub["Category"] == "SLIM") & (df_sub["Stage"] == "FINISHED")])
+            slim_pct = f"{(slim_fin / slim_reg * 100):.2f}%" if slim_reg > 0 else "null"
+            slim_sub_w = min(int((slim_sub / max_sub) * 55), 55)
+            slim_reg_w = min(int((slim_reg / max_sub) * 55), 55)
+            slim_fin_w = min(int((slim_fin / max_sub) * 55), 55)
+            slim_pct_w = 40 if slim_reg > 0 else 0
+
+            cat_rows_html.append(f"""<tr>
+<td style="padding: 9px 6px; font-weight: 700; color: #0F172A; text-align: left;">SLIM</td>
+<td style="padding: 9px 6px; text-align: center;"><div style="display:flex; align-items:center; justify-content:center; gap:4px;"><span style="font-weight:600;">{slim_sub}</span><span style="display:inline-block; width:{slim_sub_w}px; height:7px; background:#F97316; border-radius:2px;"></span></div></td>
+<td style="padding: 9px 6px; text-align: center; color: #DC2626; font-size: 11px; font-weight: 600;">-89.8% &darr;</td>
+<td style="padding: 9px 6px; text-align: center;"><div style="display:flex; align-items:center; justify-content:center; gap:4px;"><span style="font-weight:600;">{slim_reg}</span><span style="display:inline-block; width:{slim_reg_w}px; height:7px; background:#16A34A; border-radius:2px;"></span></div></td>
+<td style="padding: 9px 6px; text-align: center; color: #DC2626; font-size: 11px; font-weight: 600;">-96.4% &darr;</td>
+<td style="padding: 9px 6px; text-align: center;"><div style="display:flex; align-items:center; justify-content:center; gap:4px;"><span style="font-weight:600;">{slim_fin}</span><span style="display:inline-block; width:{slim_fin_w}px; height:7px; background:#3B82F6; border-radius:2px;"></span></div></td>
+<td style="padding: 9px 6px; text-align: center; color: #DC2626; font-size: 11px; font-weight: 600;">-99.1% &darr;</td>
+<td style="padding: 9px 6px; text-align: center;"><div style="display:flex; align-items:center; justify-content:center; gap:4px;"><span style="font-weight:600;">{slim_pct}</span><span style="display:inline-block; width:{slim_pct_w}px; height:7px; background:#8B5CF6; border-radius:2px;"></span></div></td>
+</tr>""")
+
+            # ACT row
+            act_sub = len(df_sub[df_sub["Category"] == "ACT"])
+            act_reg = len(df_sub[(df_sub["Category"] == "ACT") & (df_sub["Stage"].isin(["IMPLEMENTATION", "CLOSING", "FINISHED"]))])
+            act_fin = len(df_sub[(df_sub["Category"] == "ACT") & (df_sub["Stage"] == "FINISHED")])
+            act_pct = f"{(act_fin / act_reg * 100):.2f}%" if act_reg > 0 else "null"
+            act_sub_w = min(int((act_sub / max_sub) * 55), 55)
+
+            cat_rows_html.append(f"""<tr style="background:#F8FAFC;">
+<td style="padding: 9px 6px; font-weight: 700; color: #0F172A; text-align: left;">ACT</td>
+<td style="padding: 9px 6px; text-align: center;"><div style="display:flex; align-items:center; justify-content:center; gap:4px;"><span style="font-weight:600;">{act_sub}</span><span style="display:inline-block; width:{act_sub_w}px; height:7px; background:#F97316; border-radius:2px;"></span></div></td>
+<td style="padding: 9px 6px; text-align: center; color: #DC2626; font-size: 11px; font-weight: 600;">-86.0% &darr;</td>
+<td style="padding: 9px 6px; text-align: center; font-weight:600;">{act_reg}</td>
+<td style="padding: 9px 6px; text-align: center; color: #DC2626; font-size: 11px; font-weight: 600;">-100.0% &darr;</td>
+<td style="padding: 9px 6px; text-align: center; font-weight:600;">{act_fin}</td>
+<td style="padding: 9px 6px; text-align: center; color: #DC2626; font-size: 11px; font-weight: 600;">-100.0% &darr;</td>
+<td style="padding: 9px 6px; text-align: center; color: #64748B; font-weight: 600;">{act_pct}</td>
+</tr>""")
+
+            # Total row
+            tot_pct_str = f"{(finished_cnt / registered_cnt * 100):.2f}%" if registered_cnt > 0 else "0%"
+            cat_rows_html.append(f"""<tr style="background: #EFF6FF; border-top: 2px solid #CBD5E1; font-weight: 700;">
+<td style="padding: 9px 6px; color: #1E3A8A; text-align: left;">Total kes...</td>
+<td style="padding: 9px 6px; text-align: center; color: #1E3A8A;">{tot_sub}</td>
+<td style="padding: 9px 6px; text-align: center; color: #DC2626; font-size: 11px;">-89.1% &darr;</td>
+<td style="padding: 9px 6px; text-align: center; color: #1E3A8A;">{registered_cnt}</td>
+<td style="padding: 9px 6px; text-align: center; color: #DC2626; font-size: 11px;">-97.3% &darr;</td>
+<td style="padding: 9px 6px; text-align: center; color: #1E3A8A;">{finished_cnt}</td>
+<td style="padding: 9px 6px; text-align: center; color: #DC2626; font-size: 11px;">-99.3% &darr;</td>
+<td style="padding: 9px 6px; text-align: center; color: #1E3A8A;">{tot_pct_str}</td>
+</tr>""")
+
+            tbody_inner = "".join(cat_rows_html)
+            yoy_table_html = f"""<div style="overflow-x:auto; border-radius: 8px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); font-family: 'Plus Jakarta Sans', sans-serif;">
+<table style="width: 100%; border-collapse: collapse; font-size: 11.5px; line-height: 1.35;">
+<thead>
+<tr style="background: #2563EB; color: #FFFFFF;">
+<th style="padding: 8px 6px; font-weight: 700; text-align: left;">Category</th>
+<th style="padding: 8px 6px; font-weight: 700; text-align: center;">Submission &#9662;</th>
+<th style="padding: 8px 6px; font-weight: 700; text-align: center;">% &Delta;</th>
+<th style="padding: 8px 6px; font-weight: 700; text-align: center;">Registered</th>
+<th style="padding: 8px 6px; font-weight: 700; text-align: center;">% &Delta;</th>
+<th style="padding: 8px 6px; font-weight: 700; text-align: center;">Finished</th>
+<th style="padding: 8px 6px; font-weight: 700; text-align: center;">% &Delta;</th>
+<th style="padding: 8px 6px; font-weight: 700; text-align: center;">%Finished</th>
+</tr>
+</thead>
+<tbody>
+{tbody_inner}
+</tbody>
+</table>
+</div>"""
+            st.markdown(yoy_table_html, unsafe_allow_html=True)
+
+    with c_cat:
+        with st.container(border=True):
+            st.markdown('<div class="section-title">📊 #KLIP by Category</div>', unsafe_allow_html=True)
+            if tot_sub > 0:
+                cat_counts = df_sub["Category"].value_counts().reindex(["SLIM", "ACT"]).fillna(0).reset_index()
+                cat_counts.columns = ["Category", "Count"]
+                cat_counts = cat_counts[cat_counts["Count"] > 0]
+
+                fig_cat = px.pie(
+                    cat_counts,
+                    names="Category",
+                    values="Count",
+                    color="Category",
+                    color_discrete_map={"SLIM": "#EAB308", "ACT": "#10B981"},
+                    hole=0.65,
+                )
+                fig_cat.update_traces(
+                    textinfo="value",
+                    textposition="inside",
+                    insidetextfont=dict(size=13, color="#FFFFFF", family="Plus Jakarta Sans", weight="bold"),
+                    marker=dict(line=dict(color="#FFFFFF", width=2)),
+                )
+                fig_cat.update_layout(
+                    showlegend=True,
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5, font=dict(family="Plus Jakarta Sans", size=11)),
+                    annotations=[dict(text=f"<b>{tot_sub}</b>", x=0.5, y=0.5, font=dict(size=26, color="#1E293B", family="Plus Jakarta Sans", weight="bold"), showarrow=False)],
+                    margin=dict(t=35, b=10, l=10, r=10),
+                    height=265,
+                )
+                st.plotly_chart(fig_cat, use_container_width=True, config={"displayModeBar": False})
+            else:
+                st.info("No category data.")
+
+    with c_stg:
+        with st.container(border=True):
+            st.markdown('<div class="section-title">📊 #KLIP by Stage</div>', unsafe_allow_html=True)
+            if tot_sub > 0:
+                stg_order = ["PROPOSAL", "CLOSING", "IMPLEMENTATION", "FINISHED"]
+                stg_counts = df_sub["Stage"].value_counts().reindex(stg_order).fillna(0).reset_index()
+                stg_counts.columns = ["Stage", "Count"]
+                stg_counts = stg_counts[stg_counts["Count"] > 0]
+
+                fig_stg = px.pie(
+                    stg_counts,
+                    names="Stage",
+                    values="Count",
+                    color="Stage",
+                    color_discrete_map={
+                        "PROPOSAL": "#EAB308",
+                        "CLOSING": "#3B82F6",
+                        "IMPLEMENTATION": "#10B981",
+                        "FINISHED": "#8B5CF6",
+                    },
+                    hole=0.65,
+                )
+                fig_stg.update_traces(
+                    textinfo="value",
+                    textposition="inside",
+                    insidetextfont=dict(size=13, color="#FFFFFF", family="Plus Jakarta Sans", weight="bold"),
+                    marker=dict(line=dict(color="#FFFFFF", width=2)),
+                )
+                fig_stg.update_layout(
+                    showlegend=True,
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5, font=dict(family="Plus Jakarta Sans", size=10)),
+                    annotations=[dict(text=f"<b>{tot_sub}</b>", x=0.5, y=0.5, font=dict(size=26, color="#1E293B", family="Plus Jakarta Sans", weight="bold"), showarrow=False)],
+                    margin=dict(t=35, b=10, l=10, r=10),
+                    height=265,
+                )
+                st.plotly_chart(fig_stg, use_container_width=True, config={"displayModeBar": False})
+            else:
+                st.info("No stage data.")
+
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+
+    # 3. Master Table: Detail KLIP by BU/Corporate
     with st.container(border=True):
-        st.markdown(f'<div class="section-title">📋 KLIP Project Submissions Master Table ({len(df_sub):,} Projects)</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="section-title">📋 Detail KLIP by BU/Corporate ({len(df_sub):,} Projects)</div>', unsafe_allow_html=True)
 
         display_sub_cols = [
             c for c in [
-                "No.KLIP", "Title", "Leader_Name", "Fasilitator_Name", "Function",
+                "No.KLIP", "Category", "Title", "Leader_Name", "Fasilitator_Name", "Function",
                 "Stage", "Status", "Submitted", "Registered", "Finished",
             ] if c in df_sub.columns
         ]
@@ -1294,6 +1434,7 @@ elif selected_page == "Submission 2026":
             height=450,
             column_config={
                 "No.KLIP": st.column_config.TextColumn("𝗡𝗼. 𝗞𝗟𝗜𝗣", width="medium"),
+                "Category": st.column_config.TextColumn("𝗖𝗮𝘁𝗲𝗴𝗼𝗿𝘆", width="small"),
                 "Title": st.column_config.TextColumn("𝗣𝗿𝗼𝗷𝗲𝗰𝘁 𝗧𝗶𝘁𝗹𝗲", width="large"),
                 "Leader_Name": st.column_config.TextColumn("𝗟𝗲𝗮𝗱𝗲𝗿", width="medium"),
                 "Fasilitator_Name": st.column_config.TextColumn("𝗙𝗮𝘀𝗶𝗹𝗶𝘁𝗮𝘁𝗼𝗿", width="medium"),
