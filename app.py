@@ -186,20 +186,20 @@ st.markdown(
         border-radius: 9999px;
     }
     .badge-success {
-        background-color: #DCFCE7;
-        color: #15803D;
+        background-color: #DBEAFE;
+        color: #1D4ED8;
     }
     .badge-danger {
         background-color: #FEE2E2;
-        color: #B91C1C;
+        color: #DC2626;
     }
     .badge-info {
-        background-color: #E0E7FF;
-        color: #4338CA;
+        background-color: #DBEAFE;
+        color: #1D4ED8;
     }
     .badge-warning {
-        background-color: #FEF3C7;
-        color: #B45309;
+        background-color: #FEE2E2;
+        color: #DC2626;
     }
 
     /* Header Banner */
@@ -609,11 +609,11 @@ if selected_page == "Detail Engagement 2026":
     with kpi1:
         render_metric_card("Total Employees", f"{total_emp:,}", "Filtered Population", "info")
     with kpi2:
-        render_metric_card("Engaged", f"{engaged_emp:,}", f"{part_rate:.1f}% Participated", "success")
+        render_metric_card("Engaged", f"{engaged_emp:,}", f"{part_rate:.1f}% Participated", "info")
     with kpi3:
         render_metric_card("Non-Engaged", f"{non_engaged_emp:,}", f"{100-part_rate:.1f}% Pending", "danger")
     with kpi4:
-        render_metric_card("Participation Rate", f"{part_rate:.1f}%", "Target: ≥80%", "success" if part_rate >= 80 else "warning")
+        render_metric_card("Participation Rate", f"{part_rate:.1f}%", "Target: ≥80%", "info" if part_rate >= 80 else "danger")
     with kpi5:
         render_metric_card("Avg Score", f"{avg_score:.1f}", "Scale: 0-100", "info")
 
@@ -635,7 +635,7 @@ if selected_page == "Detail Engagement 2026":
                     names="Status",
                     values="Count",
                     color="Status",
-                    color_discrete_map={"Engaged": "#2563EB", "Non-Engaged": "#F59E0B"},
+                    color_discrete_map={"Engaged": "#2563EB", "Non-Engaged": "#EF4444"},
                     hole=0.45,
                 )
                 fig_donut.update_traces(
@@ -742,10 +742,10 @@ if selected_page == "Detail Engagement 2026":
                 color_map = {"Engaged": "#2563EB"}
             elif chart_status_view == "Show Non-Engaged":
                 plot_data = div_summary[div_summary["Engagement_Status"] == "Non-Engaged"].copy()
-                color_map = {"Non-Engaged": "#F59E0B"}
+                color_map = {"Non-Engaged": "#EF4444"}
             else:
                 plot_data = div_summary.copy()
-                color_map = {"Engaged": "#2563EB", "Non-Engaged": "#F59E0B"}
+                color_map = {"Engaged": "#2563EB", "Non-Engaged": "#EF4444"}
 
             plot_data["Division_Short"] = plot_data["Division"].map(lambda x: div_short_names.get(x, x))
             sorted_short_divs = [div_short_names.get(d, d) for d in sorted_divs]
@@ -927,11 +927,11 @@ elif selected_page == "Fasilitator Corporate":
     with kpi2:
         render_metric_card("Total Submitted (2026)", f"{tot_submitted:,}", "All Project Submissions", "info")
     with kpi3:
-        render_metric_card("Registered (2026)", f"{tot_registered:,}", f"{(tot_registered/tot_submitted*100):.1f}% of submitted" if tot_submitted > 0 else "0%", "warning")
+        render_metric_card("Registered (2026)", f"{tot_registered:,}", f"{(tot_registered/tot_submitted*100):.1f}% of submitted" if tot_submitted > 0 else "0%", "danger")
     with kpi4:
-        render_metric_card("Finished (2026)", f"{tot_finished:,}", f"{(tot_finished/tot_submitted*100):.1f}% of submitted" if tot_submitted > 0 else "0%", "success")
+        render_metric_card("Finished (2026)", f"{tot_finished:,}", f"{(tot_finished/tot_submitted*100):.1f}% of submitted" if tot_submitted > 0 else "0%", "info")
     with kpi5:
-        render_metric_card("Overall % Finished", f"{overall_fin_rate:.1f}%", "Completion Metric", "success" if overall_fin_rate >= 50 else "warning")
+        render_metric_card("Overall % Finished", f"{overall_fin_rate:.1f}%", "Completion Metric", "info" if overall_fin_rate >= 50 else "danger")
 
     st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
@@ -955,9 +955,9 @@ elif selected_page == "Fasilitator Corporate":
             fig_fas.add_trace(go.Bar(
                 y=df_chart["Nama"],
                 x=df_chart["Registered 2026"],
-                name="Registered",
+                name="Registered (Pending)",
                 orientation="h",
-                marker_color="#F59E0B",
+                marker_color="#EF4444",
                 text=df_chart["Registered 2026"],
                 textposition="inside",
                 insidetextfont=dict(color="#FFFFFF", weight="bold"),
@@ -965,9 +965,9 @@ elif selected_page == "Fasilitator Corporate":
             fig_fas.add_trace(go.Bar(
                 y=df_chart["Nama"],
                 x=df_chart["Finished 2026"],
-                name="Finished",
+                name="Finished (Done)",
                 orientation="h",
-                marker_color="#10B981",
+                marker_color="#1D4ED8",
                 text=df_chart["Finished 2026"],
                 textposition="inside",
                 insidetextfont=dict(color="#FFFFFF", weight="bold"),
@@ -1083,13 +1083,13 @@ elif selected_page == "Submission 2026":
     with kpi1:
         render_metric_card("Total Submissions", f"{tot_sub:,}", "Active Pipeline", "info")
     with kpi2:
-        render_metric_card("Proposal Stage", f"{proposal_cnt:,}", f"{(proposal_cnt/tot_sub*100):.1f}% of total" if tot_sub > 0 else "0%", "info")
+        render_metric_card("Proposal Stage", f"{proposal_cnt:,}", f"{(proposal_cnt/tot_sub*100):.1f}% of total" if tot_sub > 0 else "0%", "danger")
     with kpi3:
-        render_metric_card("Implementation", f"{impl_cnt:,}", f"{(impl_cnt/tot_sub*100):.1f}% of total" if tot_sub > 0 else "0%", "warning")
+        render_metric_card("Implementation", f"{impl_cnt:,}", f"{(impl_cnt/tot_sub*100):.1f}% of total" if tot_sub > 0 else "0%", "danger")
     with kpi4:
-        render_metric_card("Closing Stage", f"{closing_cnt:,}", f"{(closing_cnt/tot_sub*100):.1f}% of total" if tot_sub > 0 else "0%", "warning")
+        render_metric_card("Closing Stage", f"{closing_cnt:,}", f"{(closing_cnt/tot_sub*100):.1f}% of total" if tot_sub > 0 else "0%", "danger")
     with kpi5:
-        render_metric_card("Finished", f"{finished_cnt:,}", f"{(finished_cnt/tot_sub*100):.1f}% completed" if tot_sub > 0 else "0%", "success")
+        render_metric_card("Finished", f"{finished_cnt:,}", f"{(finished_cnt/tot_sub*100):.1f}% completed" if tot_sub > 0 else "0%", "info")
 
     st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
@@ -1104,10 +1104,10 @@ elif selected_page == "Submission 2026":
                 stage_counts.columns = ["Stage", "Count"]
 
                 stage_colors = {
-                    "PROPOSAL": "#3B82F6",
-                    "IMPLEMENTATION": "#F59E0B",
-                    "CLOSING": "#8B5CF6",
-                    "FINISHED": "#10B981",
+                    "PROPOSAL": "#FCA5A5",
+                    "IMPLEMENTATION": "#F87171",
+                    "CLOSING": "#EF4444",
+                    "FINISHED": "#2563EB",
                 }
 
                 fig_stage = px.pie(
