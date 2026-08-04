@@ -943,7 +943,7 @@ elif selected_page == "Fasilitator Corporate":
     tot_submitted = int(df_fas["Submitted 2026"].sum()) if "Submitted 2026" in df_fas.columns else 0
     tot_registered = int(df_fas["Registered 2026"].sum()) if "Registered 2026" in df_fas.columns else 0
     tot_finished = int(df_fas["Finished 2026"].sum()) if "Finished 2026" in df_fas.columns else 0
-    overall_fin_rate = (tot_finished / tot_submitted * 100) if tot_submitted > 0 else 0.0
+    overall_fin_rate = (tot_finished / tot_registered * 100) if tot_registered > 0 else 0.0
 
     # KPI Cards
     kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
@@ -954,9 +954,9 @@ elif selected_page == "Fasilitator Corporate":
     with kpi3:
         render_metric_card("Registered (2026)", f"{tot_registered:,}", f"{(tot_registered/tot_submitted*100):.1f}% of submitted" if tot_submitted > 0 else "0%", "danger")
     with kpi4:
-        render_metric_card("Finished (2026)", f"{tot_finished:,}", f"{(tot_finished/tot_submitted*100):.1f}% of submitted" if tot_submitted > 0 else "0%", "info")
+        render_metric_card("Finished (2026)", f"{tot_finished:,}", f"{(tot_finished/tot_registered*100):.1f}% of registered" if tot_registered > 0 else "0%", "info")
     with kpi5:
-        render_metric_card("Overall % Finished", f"{overall_fin_rate:.1f}%", "Completion Metric", "info" if overall_fin_rate >= 50 else "danger")
+        render_metric_card("Overall % Finished", f"{overall_fin_rate:.2f}%", "% Finished / Registered", "info" if overall_fin_rate >= 50 else "danger")
 
     st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
