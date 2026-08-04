@@ -1,14 +1,17 @@
 """
 App: app.py
-Deskripsi: Dashboard Interaktif Streamlit untuk Analisis KLIP Engagement (CORP-FINANCE)
-            Mengambil data CSV otomatis dari Google Drive.
+Deskripsi: Multi-Page Corporate Dashboard untuk Analisis KLIP Finance 2026:
+            1. Detail Engagement 2026
+            2. Fasilitator Corporate
+            3. Submission 2026
+            Mengambil data CSV otomatis langsung dari Google Drive.
 """
 
 import os
 import sys
 import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, Any
 
 import streamlit as st
 import pandas as pd
@@ -18,7 +21,9 @@ import plotly.graph_objects as go
 # Import modul fetch Google Drive
 from fetch_drive_data import (
     DEFAULT_FOLDER_ID,
-    DEFAULT_TARGET_FILENAME,
+    ENGAGEMENT_CSV_PATH,
+    FASILITATOR_CSV_PATH,
+    SUBMISSION_CSV_PATH,
     LATEST_CSV_PATH,
     download_klip_data_from_drive,
     generate_sample_mock_data,
@@ -28,10 +33,10 @@ from fetch_drive_data import (
 # KONFIGURASI HALAMAN STREAMLIT
 # ==============================================================================
 st.set_page_config(
-    page_title="KLIP Engagement Dashboard | CORP-FINANCE",
+    page_title="KLIP Finance Analytics Dashboard 2026",
     page_icon="📊",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 # ==============================================================================
@@ -44,6 +49,72 @@ st.markdown(
 
     html, body, [class*="css"] {
         font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    /* Sembunyikan Sidebar Streamlit Bawaan Secara Total */
+    [data-testid="stSidebar"],
+    [data-testid="collapsedControl"] {
+        display: none !important;
+    }
+
+    /* Lebarkan Container Utama */
+    .block-container {
+        padding-top: 1.5rem !important;
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
+        max-width: 95% !important;
+    }
+
+    /* Horizontal Tab Navigation Bar Modern */
+    div[data-testid="stRadio"] {
+        margin-bottom: 0.8rem !important;
+    }
+
+    div[data-testid="stRadio"] > div {
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 10px !important;
+        background: transparent !important;
+        padding: 0 !important;
+    }
+
+    div[data-testid="stRadio"] label {
+        background-color: #F1F5F9 !important;
+        border: 1.5px solid #CBD5E1 !important;
+        padding: 9px 20px !important;
+        border-radius: 9px !important;
+        font-weight: 700 !important;
+        font-size: 0.92rem !important;
+        font-family: 'Plus Jakarta Sans', sans-serif !important;
+        color: #1E293B !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease-in-out !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+    }
+
+    div[data-testid="stRadio"] label:hover {
+        background-color: #E2E8F0 !important;
+        border-color: #94A3B8 !important;
+        color: #0F172A !important;
+    }
+
+    div[data-testid="stRadio"] label[data-checked="true"],
+    div[data-testid="stRadio"] label:has(input:checked) {
+        background-color: #2563EB !important;
+        color: #FFFFFF !important;
+        border-color: #2563EB !important;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.28) !important;
+    }
+
+    div[data-testid="stRadio"] label[data-checked="true"] p,
+    div[data-testid="stRadio"] label:has(input:checked) p {
+        color: #FFFFFF !important;
+        font-weight: 700 !important;
+    }
+
+    div[data-testid="stRadio"] input[type="radio"],
+    div[data-testid="stRadio"] [data-testid="stRadioButton"] > div:first-child {
+        display: none !important;
     }
 
     /* Modern Metric Card Styling */
@@ -96,6 +167,10 @@ st.markdown(
         background-color: #E0E7FF;
         color: #4338CA;
     }
+    .badge-warning {
+        background-color: #FEF3C7;
+        color: #B45309;
+    }
 
     /* Header Banner */
     .main-header {
@@ -103,7 +178,7 @@ st.markdown(
         color: #FFFFFF;
         padding: 22px 28px;
         border-radius: 14px;
-        margin-bottom: 20px;
+        margin-bottom: 18px;
         box-shadow: 0 6px 20px -3px rgba(15, 23, 42, 0.25);
     }
     .main-header h1 {
@@ -150,20 +225,6 @@ st.markdown(
         gap: 6px;
     }
 
-    /* Sembunyikan Sidebar Streamlit Bawaan Secara Total */
-    [data-testid="stSidebar"],
-    [data-testid="collapsedControl"] {
-        display: none !important;
-    }
-
-    /* Lebarkan Container Utama */
-    .block-container {
-        padding-top: 2rem !important;
-        padding-left: 2rem !important;
-        padding-right: 2rem !important;
-        max-width: 95% !important;
-    }
-
     /* Pastikan Dropdown / Multiselect selalu terbuka ke bawah secara proporsional */
     div[data-baseweb="popover"] {
         z-index: 999999 !important;
@@ -197,7 +258,6 @@ st.markdown(
 
     /* Optimasi Tampilan Layar HP / Mobile */
     @media (max-width: 768px) {
-        /* Paksa st.columns (KPI Cards & Role Cards) menjadi 2 kolom di HP */
         [data-testid="stHorizontalBlock"] {
             flex-wrap: wrap !important;
             gap: 0.5rem !important;
@@ -209,7 +269,6 @@ st.markdown(
             min-width: calc(50% - 0.5rem) !important;
         }
         
-        /* Kurangi padding card agar hemat ruang layar HP */
         .metric-card {
             padding: 12px 14px !important;
             margin-bottom: 4px !important;
@@ -221,7 +280,6 @@ st.markdown(
             font-size: 0.75rem !important;
         }
         
-        /* Kurangi padding container utama di HP */
         .block-container {
             padding-left: 1rem !important;
             padding-right: 1rem !important;
@@ -234,802 +292,884 @@ st.markdown(
 )
 
 # ==============================================================================
-# FUNGSI PEMUATAN & NORMALISASI DATA (CACHED)
+# FUNGSI PEMUATAN DATA (CACHED)
 # ==============================================================================
 @st.cache_data(show_spinner=False)
-def load_klip_data(file_path: str = str(LATEST_CSV_PATH)) -> Optional[pd.DataFrame]:
-    """
-    Membaca dan menormalisasi dataset CSV KLIP Engagement.
-    Menggunakan decorator @st.cache_data untuk loading instan.
-    """
-    csv_file = Path(file_path)
-    if not csv_file.exists() or csv_file.stat().st_size == 0:
+def load_engagement_data() -> Optional[pd.DataFrame]:
+    """Memuat dan menormalkan data Detail Engagement 2026."""
+    target_path = ENGAGEMENT_CSV_PATH if ENGAGEMENT_CSV_PATH.exists() else LATEST_CSV_PATH
+    if not target_path.exists():
         return None
 
     try:
-        # Coba beberapa variasi delimiter jika format berbeda
-        try:
-            df = pd.read_csv(csv_file)
-        except Exception:
-            df = pd.read_csv(csv_file, sep=";")
-
-        # Standardisasi Nama Kolom secara cerdas tanpa duplikasi target
-        col_mapping = {}
-        assigned_targets = set()
-
-        for col in df.columns:
-            clean = str(col).strip().lower().replace(" ", "_").replace("/", "_").replace(".", "_")
-            target = None
-
-            # Prioritas 1: Company / Perusahaan (Dicek sebelum Name)
-            if clean in ["company_name", "company", "perusahaan", "pt", "holding"] or ("company" in clean or "perusahaan" in clean):
-                target = "Company_Name"
-            # Prioritas 2: Employee ID / NIK
-            elif clean in ["employee_id", "nik", "id_karyawan", "no_pegawai", "emp_id"] or ("nik" in clean or "id_karyawan" in clean or "emp_id" in clean):
-                target = "Employee_ID"
-            # Prioritas 3: Employee Name / Nama Karyawan (Cek agar tidak bentrok dengan Company Name)
-            elif clean in ["employee_name", "nama_karyawan", "nama_pegawai", "nama", "employee"] or ("employee" in clean and "id" not in clean) or ("nama" in clean and "perusahaan" not in clean):
-                target = "Employee_Name"
-            # Prioritas 4: Directorate
-            elif clean in ["directorate", "direktorat", "dir"] or ("directorate" in clean or "direktorat" in clean):
-                target = "Directorate"
-            # Prioritas 5: Division
-            elif clean in ["division", "divisi", "div"] or ("division" in clean or "divisi" in clean):
-                target = "Division"
-            # Prioritas 6: Group BU / CORP
-            elif any(k in clean for k in ["group_bu", "bu_corp", "group_corp", "bu", "group"]):
-                target = "Group_BU_CORP"
-            # Prioritas 7: Engagement Status
-            elif clean in ["engagement", "status", "engagement_status", "status_engagement", "klip_status", "klip_engagement"] or ("engagement" in clean or "status" in clean):
-                target = "Engagement_Status"
-            # Prioritas 8: Status PA (Eligible PA)
-            elif clean in ["sttspa", "status_pa", "stts_pa", "status pa", "pa_status"]:
-                target = "Status_PA"
-            # Prioritas 9: Roles (Leader, Sponsor, Member, Fasilitator)
-            elif clean in ["leader", "as_leader", "as_a_leader"]:
-                target = "Leader"
-            elif clean in ["sponsor", "as_sponsor", "as_a_sponsor"]:
-                target = "Sponsor"
-            elif clean in ["member", "as_member", "as_a_member"]:
-                target = "Member"
-            elif clean in ["fasilitator", "facilitator", "as_fasilitator", "as_a_fasilitator"]:
-                target = "Fasilitator"
-            # Prioritas 10: Engagement Score
-            elif any(k in clean for k in ["score", "nilai", "skor"]):
-                target = "Engagement_Score"
-            # Prioritas 11: Location
-            elif any(k in clean for k in ["loc", "lokasi", "location"]):
-                target = "Loc_Type"
-            # Prioritas 12: Completion Date
-            elif any(k in clean for k in ["date", "tanggal", "completion"]):
-                target = "Completion_Date"
-
-            if target and target not in assigned_targets:
-                col_mapping[col] = target
-                assigned_targets.add(target)
-
-        df = df.rename(columns=col_mapping)
-
-        # Hapus kolom duplikat jika ada
-        df = df.loc[:, ~df.columns.duplicated()].copy()
-
-        # Fallback kolom jika tidak ada di dataset
-        if "Employee_ID" not in df.columns:
-            df["Employee_ID"] = [f"EMP-{1000 + i}" for i in range(len(df))]
-        if "Employee_Name" not in df.columns:
-            str_cols = df.select_dtypes(include=["object"]).columns
-            df["Employee_Name"] = df[str_cols[0]] if len(str_cols) > 0 else "Karyawan"
-        if "Directorate" not in df.columns:
-            df["Directorate"] = "FINANCE"
-        if "Division" not in df.columns:
-            df["Division"] = "General Finance"
-        if "Company_Name" not in df.columns:
-            df["Company_Name"] = "CORPORATE"
-        if "Engagement_Status" not in df.columns:
-            df["Engagement_Status"] = "Engaged"
-
-        # Bersihkan dan Normalisasi Nilai Engagement_Status secara presisi
-        def normalize_status(val):
-            if pd.isna(val):
-                return "Non-Engaged"
-            s = str(val).strip().lower()
-            if s in ["1", "1.0", "true", "engaged", "sudah", "yes", "selesai", "ikut", "completed", "active"]:
-                return "Engaged"
-            elif s in ["0", "0.0", "false", "non-engaged", "non engaged", "not engaged", "belum", "no", "inactive", "non"]:
-                return "Non-Engaged"
-            if "non" in s or "not" in s or "belum" in s or "unengaged" in s:
-                return "Non-Engaged"
-            if "engage" in s:
-                return "Engaged"
-            return "Non-Engaged"
-
-        # Normalisasi Engagement_Status aman
-        if "Engagement_Status" in df.columns:
-            s_stat = df["Engagement_Status"]
-            if isinstance(s_stat, pd.DataFrame):
-                s_stat = s_stat.iloc[:, 0]
-            df["Engagement_Status"] = s_stat.apply(normalize_status)
-
-        # Bersihkan spasi string untuk kolom teks penting tanpa menghilangkan data
-        for col in ["Employee_ID", "Employee_Name", "Directorate", "Division", "Company_Name", "Loc_Type", "Status_PA"]:
-            if col in df.columns:
-                s_col = df[col]
-                if isinstance(s_col, pd.DataFrame):
-                    s_col = s_col.iloc[:, 0]
-                df[col] = s_col.fillna("-").astype(str).str.strip()
-                df[col] = df[col].replace("", "-").replace("nan", "-").replace("None", "-")
-
-        # Standardisasi Singkatan Nama Divisi untuk visualisasi horizontal
-        div_short_names = {
-            "ACCOUNTING OPERATION": "ACC OPS",
-            "ACCOUNTS RECEIVABLE & CREDIT MANAGEMENT": "AR & CREDIT",
-            "ACCOUNTS PAYABLE": "AP",
-            "TREASURY MANAGEMENT": "TREASURY",
-            "TAX MANAGEMENT": "TAX",
-            "FINANCIAL CONTROL": "FIN CONTROL",
-            "GENERAL LEDGER & REPORTING": "GL & REPORTING",
-            "FIX ASSET & INVENTORY": "FIXED ASSET",
-            "FINANCE OPERATION": "FIN OPS",
-            "ACCOUNTING & TAX": "ACC & TAX",
-            "FINANCE": "FINANCE",
+        df = pd.read_csv(target_path)
+        col_map = {
+            "Employee ID": "Employee_ID",
+            "Employee Name": "Employee_Name",
+            "Company Name": "Company_Name",
+            "Status PA": "Status_PA",
+            "Group BU/CORP": "Group_BU_CORP",
+            "Loc. Type": "Loc_Type",
+            "Loc Type": "Loc_Type",
+            "Location": "Loc_Type",
+            "Engagement Status": "Engagement_Status",
+            "Score": "Engagement_Score",
+            "Engagement Score": "Engagement_Score",
+            "Completion Date": "Completion_Date",
         }
-        if "Division" in df.columns:
-            df["Division_Short"] = df["Division"].apply(
-                lambda x: div_short_names.get(str(x).strip().upper(), div_short_names.get(str(x).strip(), str(x).strip()))
-            )
+        for old_col, new_col in col_map.items():
+            if old_col in df.columns and new_col not in df.columns:
+                df.rename(columns={old_col: new_col}, inplace=True)
+
+        if "Status_PA" in df.columns and "Engagement_Status" not in df.columns:
+            def infer_status(row):
+                pa_val = str(row.get("Status_PA", "")).strip().upper()
+                if pa_val == "KLIP":
+                    return "Engaged"
+                for role_col in ["Leader", "Sponsor", "Member", "Fasilitator"]:
+                    if role_col in row and pd.notna(row[role_col]):
+                        try:
+                            if float(row[role_col]) > 0:
+                                return "Engaged"
+                        except (ValueError, TypeError):
+                            pass
+                return "Non-Engaged"
+            df["Engagement_Status"] = df.apply(infer_status, axis=1)
+
+        if "Engagement_Status" not in df.columns:
+            df["Engagement_Status"] = "Non-Engaged"
+
+        if "Engagement_Score" not in df.columns:
+            df["Engagement_Score"] = df["Engagement_Status"].apply(lambda s: 100 if s == "Engaged" else 0)
         else:
-            df["Division_Short"] = "-"
+            df["Engagement_Score"] = pd.to_numeric(df["Engagement_Score"], errors="coerce").fillna(0).astype(int)
+
+        for col in ["Leader", "Sponsor", "Member", "Fasilitator"]:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0).astype(int)
+            else:
+                df[col] = 0
+
+        for col in ["Employee_Name", "Employee_ID", "Division", "Directorate", "Company_Name", "Loc_Type"]:
+            if col in df.columns:
+                df[col] = df[col].fillna("-").astype(str).str.strip()
 
         return df
-
     except Exception as e:
-        st.error(f"Gagal memproses file CSV: {e}")
+        st.error(f"Gagal memuat dataset Engagement: {e}")
         return None
 
 
-# ==============================================================================
-# DATA LOADING & INITIALIZATION
-# ==============================================================================
-# Check local file status
-file_exists = LATEST_CSV_PATH.exists()
-last_mod_time = "-"
-if file_exists:
-    mtime = os.path.getmtime(LATEST_CSV_PATH)
-    last_mod_time = datetime.datetime.fromtimestamp(mtime).strftime("%d-%m-%Y %H:%M:%S")
+@st.cache_data(show_spinner=False)
+def load_fasilitator_data() -> Optional[pd.DataFrame]:
+    """Memuat dan menormalkan data Fasilitator Corporate."""
+    if not FASILITATOR_CSV_PATH.exists():
+        return None
 
-# Load raw data
-df_raw = load_klip_data()
+    try:
+        df = pd.read_csv(FASILITATOR_CSV_PATH)
+        for num_col in ["Submitted 2026", "Registered 2026", "Finished 2026"]:
+            if num_col in df.columns:
+                df[num_col] = pd.to_numeric(df[num_col], errors="coerce").fillna(0).astype(int)
+            else:
+                df[num_col] = 0
 
-# Handle missing data file
-if df_raw is None or len(df_raw) == 0:
+        if "%Finished" in df.columns:
+            df["%Finished_Num"] = pd.to_numeric(df["%Finished"].astype(str).str.replace("%", "").str.replace("-", "0"), errors="coerce").fillna(0)
+        else:
+            df["%Finished_Num"] = df.apply(lambda r: (r["Finished 2026"] / r["Submitted 2026"] * 100) if r["Submitted 2026"] > 0 else 0, axis=1)
+
+        for text_col in ["Nama", "Function"]:
+            if text_col in df.columns:
+                df[text_col] = df[text_col].fillna("-").astype(str).str.strip()
+
+        return df
+    except Exception as e:
+        st.error(f"Gagal memuat dataset Fasilitator: {e}")
+        return None
+
+
+@st.cache_data(show_spinner=False)
+def load_submission_data() -> Optional[pd.DataFrame]:
+    """Memuat dan menormalkan data Submission 2026."""
+    if not SUBMISSION_CSV_PATH.exists():
+        return None
+
+    try:
+        df = pd.read_csv(SUBMISSION_CSV_PATH)
+        
+        # Bersihkan nama kolom
+        df.columns = [c.strip() for c in df.columns]
+
+        if "Stage" in df.columns:
+            df["Stage"] = df["Stage"].fillna("PROPOSAL").astype(str).str.strip().str.upper()
+
+        # Ekstraksi bulan dari kolom Submitted
+        month_map = {
+            "jan": "Januari", "feb": "Februari", "mar": "Maret", "apr": "April",
+            "mei": "Mei", "may": "Mei", "jun": "Juni", "jul": "Juli",
+            "agu": "Agustus", "aug": "Agustus", "sep": "September", "okt": "Oktober",
+            "oct": "Oktober", "nov": "November", "des": "Desember", "dec": "Desember",
+        }
+        
+        def extract_month(val):
+            val_str = str(val).lower()
+            for k, v in month_map.items():
+                if k in val_str:
+                    return v
+            return "Other"
+
+        if "Submitted" in df.columns:
+            df["Month"] = df["Submitted"].apply(extract_month)
+        else:
+            df["Month"] = "Januari"
+
+        for text_col in ["No.KLIP", "Title", "Leader_Name", "Fasilitator_Name", "Function", "Status", "BU/Corp"]:
+            if text_col in df.columns:
+                df[text_col] = df[text_col].fillna("-").astype(str).str.strip()
+
+        return df
+    except Exception as e:
+        st.error(f"Gagal memuat dataset Submission: {e}")
+        return None
+
+
+# Helper fungsi render KPI card
+def render_metric_card(title: str, value: str, badge_text: str, badge_type: str = "info"):
     st.markdown(
-        """
-        <div class="main-header">
-            <h1>📊 KLIP Finance Engagement Dashboard</h1>
-            <p>Real-Time Corporate Finance Employee Engagement Monitoring</p>
+        f"""
+        <div class="metric-card">
+            <div class="metric-title">{title}</div>
+            <div class="metric-value">{value}</div>
+            <div class="metric-badge badge-{badge_type}">{badge_text}</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    st.warning("⚠️ **Data file is not available locally (`./data/klip_finance_latest.csv`).**")
-    
-    col_a, col_b = st.columns(2)
-    with col_a:
-        st.markdown(
-            f"""
-            #### 1. Sync from Google Drive
-            Click button to download from Folder ID:
-            - **Folder ID:** `{DEFAULT_FOLDER_ID}`
-            - **Target File:** `{DEFAULT_TARGET_FILENAME}`
-            
-            *(Ensure folder access is set to **'Anyone with the link'** on Google Drive)*
-            """
-        )
-        if st.button("📥 Download Now from Google Drive", type="primary"):
-            with st.spinner("Downloading..."):
-                ok, msg, _ = download_klip_data_from_drive()
-                if ok:
-                    st.cache_data.clear()
-                    st.rerun()
-                else:
-                    st.error(msg)
-    
-    with col_b:
-        st.markdown(
-            """
-            #### 2. Simulation / Demo Data Mode
-            Use realistic mock dataset to test visualizations instantly.
-            """
-        )
-        if st.button("🚀 Generate Demo Data"):
-            generate_sample_mock_data(LATEST_CSV_PATH)
+
+# Helper fungsi sinkronisasi Google Drive
+def perform_drive_sync():
+    with st.spinner("⏳ Downloading and synchronizing 3 CSV datasets from Google Drive..."):
+        success, message, paths = download_klip_data_from_drive(folder_id=DEFAULT_FOLDER_ID)
+
+    if success:
+        st.cache_data.clear()
+        st.toast("✅ All datasets successfully synced from Google Drive!", icon="🎉")
+        st.success(f"**Success!**\n\n{message}")
+        st.rerun()
+    else:
+        st.error(f"**Sync Failed:**\n\n{message}")
+        st.info("💡 Click below to generate sample data for immediate exploration.")
+        if st.button("⚡ Generate Demo Data"):
+            generate_sample_mock_data()
             st.cache_data.clear()
             st.rerun()
 
-    st.stop()
-
 
 # ==============================================================================
-# TOP HEADER BANNER
+# TOP HORIZONTAL NAVIGATION BAR (TAB MENU)
 # ==============================================================================
-total_all = len(df_raw)
-
-st.markdown(
-    f"""
-    <div class="main-header">
-        <h1>📊 KLIP Finance Engagement Dashboard 2026</h1>
-        <p>Real-Time Corporate Finance Employee Engagement Monitoring via Google Drive Ingestion</p>
-        <div class="header-pills">
-            <span class="pill">🕒 <b>Last Sync:</b> {last_mod_time}</span>
-            <span class="pill">👥 <b>Total Dataset:</b> {total_all:,} Employees</span>
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
+selected_page = st.radio(
+    "Dashboard Menu",
+    options=["Detail Engagement 2026", "Fasilitator Corporate", "Submission 2026"],
+    horizontal=True,
+    label_visibility="collapsed",
 )
 
 
 # ==============================================================================
-# HORIZONTAL CONTROLS & FILTER BAR
+# 1. HALAMAN: DETAIL ENGAGEMENT 2026
 # ==============================================================================
-with st.container(border=True):
-    fcol1, fcol2, fcol3, fcol4 = st.columns([1.5, 1, 1.1, 0.9])
+if selected_page == "Detail Engagement 2026":
+    df_raw = load_engagement_data()
 
-    with fcol1:
-        if "Division" in df_raw.columns:
-            all_divisions = sorted([d for d in df_raw["Division"].dropna().unique().tolist() if str(d).strip() not in ["-", ""]])
-        else:
-            all_divisions = []
+    if df_raw is None:
+        st.warning("⚠️ File data engagement belum ditemukan. Mengunduh data dari Google Drive...")
+        perform_drive_sync()
+        st.stop()
 
-        selected_divisions = st.multiselect(
-            "Division (Dept)",
-            options=all_divisions,
-            default=[],
-            placeholder="All Divisions (Click to select...)",
-            help="Select one or multiple divisions to filter the dashboard.",
-        )
+    sync_time_str = datetime.datetime.fromtimestamp(
+        ENGAGEMENT_CSV_PATH.stat().st_mtime if ENGAGEMENT_CSV_PATH.exists() else LATEST_CSV_PATH.stat().st_mtime
+    ).strftime("%d %b %Y, %H:%M")
 
-    with fcol2:
-        status_filter = st.selectbox(
-            "Engagement Status",
-            options=["All Status", "Engaged", "Non-Engaged"],
-            index=0,
-            help="Filter records by engagement participation status.",
-        )
-
-    with fcol3:
-        filter_search = st.text_input(
-            "Search Name / ID",
-            placeholder="Type employee name or ID...",
-            help="Quick search across Employee Name and ID.",
-        )
-
-    with fcol4:
-        st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
-        refresh_clicked = st.button("🔄 Refresh Data", type="primary", use_container_width=True)
-
-# Google Drive Sync Handler
-if refresh_clicked:
-    with st.spinner("⏳ Downloading and synchronizing CSV from Google Drive..."):
-        success, message, result_path = download_klip_data_from_drive(
-            folder_id=DEFAULT_FOLDER_ID,
-            target_filename=DEFAULT_TARGET_FILENAME,
-            dest_path=LATEST_CSV_PATH,
-        )
-
-    if success:
-        st.cache_data.clear()
-        st.toast("✅ Data successfully synced from Google Drive!", icon="🎉")
-        st.success(f"**Success!** {message}")
-        st.rerun()
-    else:
-        st.error(f"**Sync Failed:**\n\n{message}")
-        if not LATEST_CSV_PATH.exists():
-            st.info("💡 Click below to generate simulated demo data for immediate exploration.")
-            if st.button("⚡ Generate Demo Data"):
-                generate_sample_mock_data(LATEST_CSV_PATH)
-                st.cache_data.clear()
-                st.rerun()
-
-# Apply filters safely
-df_filtered = df_raw.copy()
-
-if selected_divisions:
-    df_filtered = df_filtered[df_filtered["Division"].isin(selected_divisions)]
-
-if status_filter and status_filter != "All Status":
-    df_filtered = df_filtered[df_filtered["Engagement_Status"] == status_filter]
-
-if filter_search.strip():
-    kw = filter_search.strip().lower()
-    df_filtered = df_filtered[
-        df_filtered["Employee_Name"].astype(str).str.lower().str.contains(kw, na=False)
-        | df_filtered["Employee_ID"].astype(str).str.lower().str.contains(kw, na=False)
-    ]
-
-total_filtered = len(df_filtered)
-
-
-# ==============================================================================
-# KPI METRICS CARDS
-# ==============================================================================
-engaged_count = int((df_filtered["Engagement_Status"] == "Engaged").sum())
-non_engaged_count = int((df_filtered["Engagement_Status"] == "Non-Engaged").sum())
-engagement_rate = (engaged_count / total_filtered * 100) if total_filtered > 0 else 0
-non_engagement_rate = (non_engaged_count / total_filtered * 100) if total_filtered > 0 else 0
-total_dirs_count = df_filtered["Directorate"].nunique()
-total_divs_count = df_filtered["Division"].nunique()
-
-mcol1, mcol2, mcol3, mcol4 = st.columns(4)
-
-with mcol1:
+    # Header Banner
     st.markdown(
         f"""
-        <div class="metric-card">
-            <div class="metric-title">TOTAL EMPLOYEES</div>
-            <div class="metric-value">{total_filtered:,}</div>
-            <div>
-                <span class="metric-badge badge-info">From {total_all:,} total records</span>
+        <div class="main-header">
+            <h1>📊 KLIP Finance Engagement Dashboard 2026</h1>
+            <p>Corporate Finance Engagement, Department Breakdown & Performance Analytics • 2026 Period</p>
+            <div class="header-pills">
+                <span class="pill">⚡ Last Sync: {sync_time_str}</span>
+                <span class="pill">👥 Total Dataset: {len(df_raw):,} Employees</span>
             </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-with mcol2:
-    st.markdown(
-        f"""
-        <div class="metric-card" style="border-left: 4px solid #10B981;">
-            <div class="metric-title">ENGAGED</div>
-            <div class="metric-value" style="color: #059669;">{engaged_count:,}</div>
-            <div>
-                <span class="metric-badge badge-success">✓ {engagement_rate:.1f}% Participation</span>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-with mcol3:
-    st.markdown(
-        f"""
-        <div class="metric-card" style="border-left: 4px solid #EF4444;">
-            <div class="metric-title">NON-ENGAGED</div>
-            <div class="metric-value" style="color: #DC2626;">{non_engaged_count:,}</div>
-            <div>
-                <span class="metric-badge badge-danger">✕ {non_engagement_rate:.1f}% Pending</span>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-with mcol4:
-    st.markdown(
-        f"""
-        <div class="metric-card" style="border-left: 4px solid #6366F1;">
-            <div class="metric-title">ORGANIZATION COVERAGE</div>
-            <div class="metric-value" style="color: #4F46E5;">{total_divs_count} <span style="font-size: 1rem; font-weight: 500; color: #64748B;">Divisions</span></div>
-            <div>
-                <span class="metric-badge badge-info">🏢 {total_dirs_count} Directorate</span>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-# Role Breakdown Badges (if available in CSV)
-role_cols = [c for c in ["Leader", "Sponsor", "Member", "Fasilitator"] if c in df_filtered.columns]
-if role_cols:
-    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-    rcol1, rcol2, rcol3, rcol4 = st.columns(4)
-    with rcol1:
-        leader_cnt = int(pd.to_numeric(df_filtered["Leader"], errors="coerce").fillna(0).sum()) if "Leader" in df_filtered.columns else 0
-        st.markdown(
-            f"""
-            <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 10px; padding: 10px 14px; text-align: center;">
-                <span style="font-size: 0.75rem; color: #1E40AF; font-weight: 600; text-transform: uppercase;">👑 AS A LEADER</span>
-                <div style="font-size: 1.35rem; font-weight: 800; color: #1D4ED8; margin-top: 2px;">{leader_cnt}</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with rcol2:
-        sponsor_cnt = int(pd.to_numeric(df_filtered["Sponsor"], errors="coerce").fillna(0).sum()) if "Sponsor" in df_filtered.columns else 0
-        st.markdown(
-            f"""
-            <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px; padding: 10px 14px; text-align: center;">
-                <span style="font-size: 0.75rem; color: #166534; font-weight: 600; text-transform: uppercase;">⭐ AS A SPONSOR</span>
-                <div style="font-size: 1.35rem; font-weight: 800; color: #15803D; margin-top: 2px;">{sponsor_cnt}</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with rcol3:
-        member_cnt = int(pd.to_numeric(df_filtered["Member"], errors="coerce").fillna(0).sum()) if "Member" in df_filtered.columns else 0
-        st.markdown(
-            f"""
-            <div style="background: #FAF5FF; border: 1px solid #E9D5FF; border-radius: 10px; padding: 10px 14px; text-align: center;">
-                <span style="font-size: 0.75rem; color: #6B21A8; font-weight: 600; text-transform: uppercase;">👥 AS A MEMBER</span>
-                <div style="font-size: 1.35rem; font-weight: 800; color: #7E22CE; margin-top: 2px;">{member_cnt}</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with rcol4:
-        fasil_cnt = int(pd.to_numeric(df_filtered["Fasilitator"], errors="coerce").fillna(0).sum()) if "Fasilitator" in df_filtered.columns else 0
-        st.markdown(
-            f"""
-            <div style="background: #FFF7ED; border: 1px solid #FED7AA; border-radius: 10px; padding: 10px 14px; text-align: center;">
-                <span style="font-size: 0.75rem; color: #9A3412; font-weight: 600; text-transform: uppercase;">🎯 AS A FASILITATOR</span>
-                <div style="font-size: 1.35rem; font-weight: 800; color: #C2410C; margin-top: 2px;">{fasil_cnt}</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-st.markdown("<br>", unsafe_allow_html=True)
-
-
-# ==============================================================================
-# VISUALIZATION (EXECUTIVE DASHBOARD) - INTERACTIVE & HIGH CONTRAST
-# ==============================================================================
-color_map = {"Engaged": "#10B981", "Non-Engaged": "#EF4444"}
-
-if total_filtered > 0:
-    # Color Legend Indicator Badge
-    st.markdown(
-        """
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 4px 2px;">
-            <div style="font-size: 1.1rem; font-weight: 700; color: #0F172A;">📊 Visual Engagement Overview</div>
-            <div style="font-size: 0.85rem; font-weight: 600; background: #FFFFFF; padding: 6px 14px; border-radius: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                <span style="color: #10B981; margin-right: 16px;">● <b>Engaged</b> (Completed)</span>
-                <span style="color: #EF4444;">● <b>Non-Engaged</b> (Pending)</span>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    # ROW 1: Donut Chart & Directorate Overview
-    row1_col1, row1_col2 = st.columns([1, 1.3])
-
-    with row1_col1:
-        with st.container(border=True):
-            st.markdown('<div class="section-title">🎯 Overall Participation Rate</div>', unsafe_allow_html=True)
-            status_counts = df_filtered["Engagement_Status"].value_counts().reset_index()
-            status_counts.columns = ["Status", "Count"]
-            
-            fig_donut = px.pie(
-                status_counts,
-                names="Status",
-                values="Count",
-                hole=0.45,
-                color="Status",
-                color_discrete_map=color_map,
-            )
-            fig_donut.update_traces(
-                textposition="inside",
-                textinfo="percent+label",
-                textfont=dict(color="#FFFFFF", size=12, family="Plus Jakarta Sans, sans-serif"),
-                hoverinfo="label+value+percent",
-                marker=dict(line=dict(color="#FFFFFF", width=2.5)),
-            )
-            fig_donut.update_layout(
-                margin=dict(t=20, b=20, l=10, r=10),
-                height=340,
-                showlegend=False,
-                annotations=[
-                    dict(
-                        text=f"<b style='font-size:22px;color:#0F172A;'>{engagement_rate:.1f}%</b><br><span style='font-size:12px;color:#64748B;font-weight:600;'>Participation</span>",
-                        x=0.5,
-                        y=0.5,
-                        showarrow=False,
-                    )
-                ],
-                plot_bgcolor="rgba(0,0,0,0)",
-                paper_bgcolor="rgba(0,0,0,0)",
-            )
-            st.plotly_chart(fig_donut, use_container_width=True)
-
-    with row1_col2:
-        with st.container(border=True):
-            st.markdown('<div class="section-title">🏢 Participation by Directorate</div>', unsafe_allow_html=True)
-            dir_grouped = (
-                df_filtered.groupby(["Directorate", "Engagement_Status"])
-                .size()
-                .reset_index(name="Count")
-            )
-            
-            fig_dir = px.bar(
-                dir_grouped,
-                y="Directorate",
-                x="Count",
-                color="Engagement_Status",
-                orientation="h",
-                barmode="stack",
-                color_discrete_map=color_map,
-                text="Count",
-                labels={"Count": "Employees", "Directorate": "Directorate", "Engagement_Status": "Status"},
-            )
-            fig_dir.update_traces(
-                textposition="inside",
-                textfont=dict(color="#FFFFFF", size=11, family="Plus Jakarta Sans, sans-serif"),
-            )
-            fig_dir.update_layout(
-                margin=dict(t=20, b=40, l=20, r=20),
-                height=340,
-                showlegend=False,
-                xaxis=dict(
-                    gridcolor="#E2E8F0",
-                    tickfont=dict(color="#1E293B", size=11, family="Plus Jakarta Sans, sans-serif"),
-                    title=dict(text="Number of Employees", font=dict(color="#0F172A", size=12)),
-                ),
-                yaxis=dict(
-                    autorange="reversed",
-                    tickfont=dict(color="#1E293B", size=11, family="Plus Jakarta Sans, sans-serif"),
-                    title=None,
-                ),
-                plot_bgcolor="rgba(0,0,0,0)",
-                paper_bgcolor="rgba(0,0,0,0)",
-            )
-            st.plotly_chart(fig_dir, use_container_width=True)
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # ROW 2: SINGLE MAIN INTERACTIVE DIVISION CHART (FULL WIDTH)
+    # Filter Bar Horizontal
     with st.container(border=True):
-        st.markdown('<div class="section-title">📈 Division Engagement Breakdown</div>', unsafe_allow_html=True)
-        
-        # Interactive Controls
-        ctrl_col1, ctrl_col2, _ = st.columns([1.5, 1.5, 3])
-        with ctrl_col1:
-            div_status_view = st.selectbox(
+        fcol1, fcol2, fcol3, fcol4 = st.columns([1.5, 1, 1.1, 0.9])
+
+        with fcol1:
+            all_divisions = sorted([d for d in df_raw["Division"].dropna().unique().tolist() if str(d).strip() not in ["-", ""]]) if "Division" in df_raw.columns else []
+            selected_divisions = st.multiselect(
+                "Division (Dept)",
+                options=all_divisions,
+                default=[],
+                placeholder="All Divisions (Click to select...)",
+                help="Select one or multiple divisions to filter the dashboard.",
+            )
+
+        with fcol2:
+            status_filter = st.selectbox(
+                "Engagement Status",
+                options=["All Status", "Engaged", "Non-Engaged"],
+                index=0,
+                help="Filter records by engagement participation status.",
+            )
+
+        with fcol3:
+            filter_search = st.text_input(
+                "Search Name / ID",
+                placeholder="Type employee name or ID...",
+                help="Quick search across Employee Name and ID.",
+            )
+
+        with fcol4:
+            st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
+            refresh_clicked = st.button("🔄 Refresh Data", type="primary", use_container_width=True, key="refresh_eng")
+
+    if refresh_clicked:
+        perform_drive_sync()
+
+    # Filter Data
+    df_filtered = df_raw.copy()
+    if selected_divisions:
+        df_filtered = df_filtered[df_filtered["Division"].isin(selected_divisions)]
+    if status_filter and status_filter != "All Status":
+        df_filtered = df_filtered[df_filtered["Engagement_Status"] == status_filter]
+    if filter_search.strip():
+        kw = filter_search.strip().lower()
+        df_filtered = df_filtered[
+            df_filtered["Employee_Name"].astype(str).str.lower().str.contains(kw, na=False)
+            | df_filtered["Employee_ID"].astype(str).str.lower().str.contains(kw, na=False)
+        ]
+
+    # Metrics
+    total_emp = len(df_filtered)
+    engaged_emp = len(df_filtered[df_filtered["Engagement_Status"] == "Engaged"])
+    non_engaged_emp = len(df_filtered[df_filtered["Engagement_Status"] == "Non-Engaged"])
+    part_rate = (engaged_emp / total_emp * 100) if total_emp > 0 else 0.0
+    avg_score = df_filtered["Engagement_Score"].mean() if total_emp > 0 else 0.0
+
+    # KPI Cards Row
+    kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
+    with kpi1:
+        render_metric_card("Total Employees", f"{total_emp:,}", "Filtered Population", "info")
+    with kpi2:
+        render_metric_card("Engaged", f"{engaged_emp:,}", f"{part_rate:.1f}% Participated", "success")
+    with kpi3:
+        render_metric_card("Non-Engaged", f"{non_engaged_emp:,}", f"{100-part_rate:.1f}% Pending", "danger")
+    with kpi4:
+        render_metric_card("Participation Rate", f"{part_rate:.1f}%", "Target: ≥80%", "success" if part_rate >= 80 else "warning")
+    with kpi5:
+        render_metric_card("Avg Score", f"{avg_score:.1f}", "Scale: 0-100", "info")
+
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+
+    # Row 1: Donut Chart & Role Participation Breakdown
+    c_left, c_right = st.columns([5, 7])
+
+    with c_left:
+        with st.container(border=True):
+            st.markdown('<div class="section-title">📊 Overall Participation Rate</div>', unsafe_allow_html=True)
+            if total_emp > 0:
+                donut_df = pd.DataFrame({
+                    "Status": ["Engaged", "Non-Engaged"],
+                    "Count": [engaged_emp, non_engaged_emp],
+                })
+                fig_donut = px.pie(
+                    donut_df,
+                    names="Status",
+                    values="Count",
+                    color="Status",
+                    color_discrete_map={"Engaged": "#2563EB", "Non-Engaged": "#F59E0B"},
+                    hole=0.45,
+                )
+                fig_donut.update_traces(
+                    textinfo="percent+value",
+                    textposition="inside",
+                    texttemplate="<b>%{value}</b><br>(%{percent:.1%})",
+                    insidetextfont=dict(size=14, color="#FFFFFF", family="Plus Jakarta Sans", weight="bold"),
+                    marker=dict(line=dict(color="#FFFFFF", width=2)),
+                )
+                fig_donut.update_layout(
+                    showlegend=True,
+                    legend=dict(orientation="h", yanchor="bottom", y=-0.15, xanchor="center", x=0.5, font=dict(family="Plus Jakarta Sans", size=12)),
+                    margin=dict(t=10, b=30, l=10, r=10),
+                    height=285,
+                )
+                st.plotly_chart(fig_donut, use_container_width=True)
+            else:
+                st.info("No data available for the selected filters.")
+
+    with c_right:
+        with st.container(border=True):
+            st.markdown('<div class="section-title">👥 Role Participation Breakdown</div>', unsafe_allow_html=True)
+            leader_count = int((df_filtered["Leader"] > 0).sum()) if "Leader" in df_filtered.columns else 0
+            sponsor_count = int((df_filtered["Sponsor"] > 0).sum()) if "Sponsor" in df_filtered.columns else 0
+            member_count = int((df_filtered["Member"] > 0).sum()) if "Member" in df_filtered.columns else 0
+            fasilitator_count = int((df_filtered["Fasilitator"] > 0).sum()) if "Fasilitator" in df_filtered.columns else 0
+
+            rcol1, rcol2 = st.columns(2)
+            with rcol1:
+                render_metric_card("Leader Role", f"{leader_count:,}", f"{(leader_count/total_emp*100):.1f}% of total" if total_emp > 0 else "0%", "info")
+                render_metric_card("Member Role", f"{member_count:,}", f"{(member_count/total_emp*100):.1f}% of total" if total_emp > 0 else "0%", "info")
+            with rcol2:
+                render_metric_card("Sponsor Role", f"{sponsor_count:,}", f"{(sponsor_count/total_emp*100):.1f}% of total" if total_emp > 0 else "0%", "info")
+                render_metric_card("Facilitator Role", f"{fasilitator_count:,}", f"{(fasilitator_count/total_emp*100):.1f}% of total" if total_emp > 0 else "0%", "info")
+
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+
+    # Row 2: Interactive Single Division Chart
+    with st.container(border=True):
+        st.markdown('<div class="section-title">🏢 Division Engagement Breakdown</div>', unsafe_allow_html=True)
+
+        chart_col1, chart_col2 = st.columns([1, 1])
+        with chart_col1:
+            chart_status_view = st.selectbox(
                 "Status View",
                 options=["All Status", "Show Engaged", "Show Non-Engaged"],
                 index=0,
-                key="div_status_view",
-                help="Select which status category to display on the chart."
+                key="chart_status_view",
             )
-        with ctrl_col2:
-            div_sort_order = st.selectbox(
+        with chart_col2:
+            chart_sort_order = st.selectbox(
                 "Sort Order",
                 options=["Highest to Lowest", "Lowest to Highest"],
                 index=0,
-                key="div_sort_order",
-                help="Sort divisions by employee volume."
+                key="chart_sort_order",
             )
 
-        ascending_sort = (div_sort_order == "Lowest to Highest")
-
-        max_y = 10
-        if div_status_view == "Show Engaged":
-            div_data = df_filtered[df_filtered["Engagement_Status"] == "Engaged"]
-            if len(div_data) > 0:
-                div_grouped = div_data.groupby(["Division", "Division_Short"]).size().reset_index(name="Count")
-                div_grouped["Engagement_Status"] = "Engaged"
-                div_grouped = div_grouped.sort_values(by="Count", ascending=ascending_sort)
-                div_order = div_grouped["Division_Short"].tolist()
-                max_y = div_grouped["Count"].max()
-
-                fig_div = px.bar(
-                    div_grouped,
-                    x="Division_Short",
-                    y="Count",
-                    color="Engagement_Status",
-                    color_discrete_map=color_map,
-                    category_orders={"Division_Short": div_order},
-                    hover_name="Division",
-                    labels={"Count": "Employees", "Division_Short": "Division", "Engagement_Status": "Status"},
-                )
-                fig_div.update_traces(
-                    textposition="outside",
-                    texttemplate="<b>%{y}</b>",
-                    textfont=dict(color="#0F172A", size=12, family="Plus Jakarta Sans, sans-serif"),
-                    cliponaxis=False,
-                )
-            else:
-                fig_div = None
-
-        elif div_status_view == "Show Non-Engaged":
-            div_data = df_filtered[df_filtered["Engagement_Status"] == "Non-Engaged"]
-            if len(div_data) > 0:
-                div_grouped = div_data.groupby(["Division", "Division_Short"]).size().reset_index(name="Count")
-                div_grouped["Engagement_Status"] = "Non-Engaged"
-                div_grouped = div_grouped.sort_values(by="Count", ascending=ascending_sort)
-                div_order = div_grouped["Division_Short"].tolist()
-                max_y = div_grouped["Count"].max()
-
-                fig_div = px.bar(
-                    div_grouped,
-                    x="Division_Short",
-                    y="Count",
-                    color="Engagement_Status",
-                    color_discrete_map=color_map,
-                    category_orders={"Division_Short": div_order},
-                    hover_name="Division",
-                    labels={"Count": "Employees", "Division_Short": "Division", "Engagement_Status": "Status"},
-                )
-                fig_div.update_traces(
-                    textposition="outside",
-                    texttemplate="<b>%{y}</b>",
-                    textfont=dict(color="#0F172A", size=12, family="Plus Jakarta Sans, sans-serif"),
-                    cliponaxis=False,
-                )
-            else:
-                fig_div = None
-
-        else:  # "All Status"
-            # Calculate total volume per division for sorting & top total labels
-            div_totals = df_filtered.groupby(["Division", "Division_Short"]).size().reset_index(name="Total")
-            div_totals = div_totals.sort_values(by="Total", ascending=ascending_sort)
-            div_order = div_totals["Division_Short"].tolist()
-            max_y = div_totals["Total"].max() if len(div_totals) > 0 else 10
-
-            div_grouped = (
-                df_filtered.groupby(["Division", "Division_Short", "Engagement_Status"])
+        if total_emp > 0 and "Division" in df_filtered.columns:
+            div_summary = (
+                df_filtered.groupby(["Division", "Engagement_Status"])
                 .size()
                 .reset_index(name="Count")
             )
 
+            div_totals = df_filtered.groupby("Division").size().reset_index(name="Total")
+            div_engaged = df_filtered[df_filtered["Engagement_Status"] == "Engaged"].groupby("Division").size().reset_index(name="Engaged_Count")
+            div_non_engaged = df_filtered[df_filtered["Engagement_Status"] == "Non-Engaged"].groupby("Division").size().reset_index(name="NonEngaged_Count")
+
+            merged_div = pd.merge(div_totals, div_engaged, on="Division", how="left").fillna(0)
+            merged_div = pd.merge(merged_div, div_non_engaged, on="Division", how="left").fillna(0)
+
+            if chart_status_view == "Show Engaged":
+                sort_col = "Engaged_Count"
+            elif chart_status_view == "Show Non-Engaged":
+                sort_col = "NonEngaged_Count"
+            else:
+                sort_col = "Total"
+
+            ascending = (chart_sort_order == "Lowest to Highest")
+            sorted_divs = merged_div.sort_values(by=sort_col, ascending=ascending)["Division"].tolist()
+
+            div_short_names = {
+                "ACCOUNTING OPERATION": "ACC OPS",
+                "ACCOUNTS RECEIVABLE & CREDIT MANAGEMENT": "AR & CREDIT",
+                "ACCOUNTS PAYABLE": "AP",
+                "TREASURY MANAGEMENT": "TREASURY",
+                "TAX MANAGEMENT": "TAX",
+                "FINANCIAL CONTROL": "FIN CONTROL",
+                "GENERAL LEDGER & REPORTING": "GL & REPORTING",
+                "FIX ASSET & INVENTORY": "FIXED ASSET",
+                "FINANCE OPERATION": "FIN OPS",
+                "ACCOUNTING & TAX": "ACC & TAX",
+                "FINANCE": "FINANCE",
+                "INTERNAL AUDIT": "INT AUDIT",
+            }
+
+            if chart_status_view == "Show Engaged":
+                plot_data = div_summary[div_summary["Engagement_Status"] == "Engaged"].copy()
+                color_map = {"Engaged": "#2563EB"}
+            elif chart_status_view == "Show Non-Engaged":
+                plot_data = div_summary[div_summary["Engagement_Status"] == "Non-Engaged"].copy()
+                color_map = {"Non-Engaged": "#F59E0B"}
+            else:
+                plot_data = div_summary.copy()
+                color_map = {"Engaged": "#2563EB", "Non-Engaged": "#F59E0B"}
+
+            plot_data["Division_Short"] = plot_data["Division"].map(lambda x: div_short_names.get(x, x))
+            sorted_short_divs = [div_short_names.get(d, d) for d in sorted_divs]
+
             fig_div = px.bar(
-                div_grouped,
+                plot_data,
                 x="Division_Short",
                 y="Count",
                 color="Engagement_Status",
                 barmode="stack",
                 color_discrete_map=color_map,
+                category_orders={"Division_Short": sorted_short_divs, "Engagement_Status": ["Non-Engaged", "Engaged"]},
                 text="Count",
-                category_orders={"Division_Short": div_order},
-                hover_name="Division",
-                labels={"Count": "Employees", "Division_Short": "Division", "Engagement_Status": "Status"},
             )
+
             fig_div.update_traces(
                 textposition="inside",
-                textfont=dict(color="#FFFFFF", size=10, family="Plus Jakarta Sans, sans-serif"),
+                insidetextfont=dict(size=12, color="#FFFFFF", family="Plus Jakarta Sans", weight="bold"),
             )
 
-            # Add total count annotations directly above each stacked bar
-            for _, row in div_totals.iterrows():
-                fig_div.add_annotation(
-                    x=row["Division_Short"],
-                    y=row["Total"],
-                    text=f"<b>{row['Total']}</b>",
-                    showarrow=False,
-                    yshift=12,
-                    font=dict(color="#0F172A", size=12, family="Plus Jakarta Sans, sans-serif"),
-                )
+            max_y = merged_div[sort_col].max() if len(merged_div) > 0 else 10
+            for d in sorted_divs:
+                row_val = merged_div[merged_div["Division"] == d]
+                if not row_val.empty:
+                    val = int(row_val[sort_col].values[0])
+                    short_d = div_short_names.get(d, d)
+                    if val > 0:
+                        fig_div.add_annotation(
+                            x=short_d,
+                            y=val,
+                            text=f"<b>{val}</b>",
+                            showarrow=False,
+                            yshift=14,
+                            font=dict(family="Plus Jakarta Sans", size=13, color="#0F172A", weight="bold"),
+                        )
 
-        if fig_div is not None:
             fig_div.update_layout(
-                margin=dict(t=40, b=30, l=10, r=10),
-                height=420,
-                showlegend=False,
-                xaxis=dict(
-                    showgrid=False,
-                    title=None,
-                    tickangle=0,
-                    tickfont=dict(color="#1E293B", size=11, family="Plus Jakarta Sans, sans-serif"),
-                ),
                 yaxis=dict(
                     visible=False,
                     showgrid=False,
                     zeroline=False,
-                    range=[0, max_y * 1.2],
+                    range=[0, max_y * 1.25],
                 ),
-                plot_bgcolor="rgba(0,0,0,0)",
-                paper_bgcolor="rgba(0,0,0,0)",
+                xaxis=dict(
+                    showgrid=False,
+                    title=None,
+                    tickfont=dict(color="#0F172A", size=11, family="Plus Jakarta Sans", weight="bold"),
+                ),
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=1.02,
+                    xanchor="right",
+                    x=1.0,
+                    title=None,
+                    font=dict(family="Plus Jakarta Sans", size=12),
+                ),
+                margin=dict(t=35, b=20, l=10, r=10),
+                height=380,
             )
             st.plotly_chart(fig_div, use_container_width=True)
         else:
-            st.info("ℹ️ No records found matching the selected status view.")
+            st.info("No division data available.")
 
-else:
-    st.info("ℹ️ No records match the current filter criteria. Try adjusting the sidebar filters.")
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+
+    # Row 3: Detail Data Table
+    with st.container(border=True):
+        st.markdown(f'<div class="section-title">📋 Employee Engagement Records ({len(df_filtered):,} Rows)</div>', unsafe_allow_html=True)
+
+        df_table = df_filtered.copy()
+        if "Employee_ID" in df_table.columns:
+            df_table["Employee_ID"] = df_table["Employee_ID"].apply(
+                lambda x: f"{str(x)[:3]}***" if len(str(x)) > 3 else str(x)
+            )
+
+        display_cols = [
+            col for col in [
+                "Loc_Type", "Employee_ID", "Employee_Name", "Status_PA", "Engagement_Status",
+                "Leader", "Sponsor", "Member", "Fasilitator", "Directorate", "Division",
+                "Company_Name", "Engagement_Score", "Completion_Date",
+            ] if col in df_table.columns
+        ]
+
+        st.dataframe(
+            df_table[display_cols],
+            use_container_width=True,
+            height=450,
+            column_config={
+                "Loc_Type": st.column_config.TextColumn("𝗟𝗼𝗰𝗮𝘁𝗶𝗼𝗻", width="small"),
+                "Employee_ID": st.column_config.TextColumn("𝗡𝗜𝗞 / 𝗜𝗗", width="medium"),
+                "Employee_Name": st.column_config.TextColumn("𝗘𝗺𝗽𝗹𝗼𝘆𝗲𝗲 𝗡𝗮𝗺𝗲", width="large"),
+                "Status_PA": st.column_config.TextColumn("𝗦𝘁𝗮𝘁𝘂𝘀 𝗣𝗔", width="small"),
+                "Engagement_Status": st.column_config.TextColumn("𝗦𝘁𝗮𝘁𝘂𝘀", width="medium"),
+                "Leader": st.column_config.NumberColumn("𝗟𝗲𝗮𝗱𝗲𝗿", width="small", format="%d"),
+                "Sponsor": st.column_config.NumberColumn("𝗦𝗽𝗼𝗻𝘀𝗼𝗿", width="small", format="%d"),
+                "Member": st.column_config.NumberColumn("𝗠𝗲𝗺𝗯𝗲𝗿", width="small", format="%d"),
+                "Fasilitator": st.column_config.NumberColumn("𝗙𝗮𝘀𝗶𝗹𝗶𝘁𝗮𝘁𝗼𝗿", width="small", format="%d"),
+                "Directorate": st.column_config.TextColumn("𝗗𝗶𝗿𝗲𝗰𝘁𝗼𝗿𝗮𝘁𝗲", width="medium"),
+                "Division": st.column_config.TextColumn("𝗗𝗶𝘃𝗶𝘀𝗶𝗼𝗻", width="large"),
+                "Company_Name": st.column_config.TextColumn("𝗖𝗼𝗺𝗽𝗮𝗻𝘆", width="medium"),
+                "Engagement_Score": st.column_config.ProgressColumn(
+                    "𝗘𝗻𝗴𝗮𝗴𝗲𝗺𝗲𝗻𝘁 𝗦𝗰𝗼𝗿𝗲",
+                    help="Employee Participation Score (0 - 100)",
+                    format="%d",
+                    min_value=0,
+                    max_value=100,
+                ),
+                "Completion_Date": st.column_config.TextColumn("𝗖𝗼𝗺𝗽𝗹𝗲𝘁𝗶𝗼𝗻 𝗗𝗮𝘁𝗲", width="small"),
+            },
+            hide_index=True,
+        )
 
 
 # ==============================================================================
-# INTERACTIVE DATA TABLE (EXECUTIVE ACTION VIEW)
+# 2. HALAMAN: FASILITATOR CORPORATE
 # ==============================================================================
-st.markdown("---")
+elif selected_page == "Fasilitator Corporate":
+    df_fas_raw = load_fasilitator_data()
 
-table_col1, table_col2, table_col3 = st.columns([1.8, 2.2, 1])
+    if df_fas_raw is None:
+        st.warning("⚠️ File data Fasilitator belum ditemukan. Mengunduh data dari Google Drive...")
+        perform_drive_sync()
+        st.stop()
 
-with table_col1:
-    st.markdown('<div class="section-title" style="margin-bottom:0;">📋 Employee Engagement Details</div>', unsafe_allow_html=True)
+    sync_time_str = datetime.datetime.fromtimestamp(FASILITATOR_CSV_PATH.stat().st_mtime).strftime("%d %b %Y, %H:%M") if FASILITATOR_CSV_PATH.exists() else "-"
 
-with table_col2:
-    table_filter_view = st.radio(
-        "Table Status Filter",
-        options=["All", "Show Engaged", "Show Non-Engaged"],
-        index=0,
-        horizontal=True,
-        label_visibility="collapsed",
-        key="table_status_filter_radio",
-        help="Filter table records by engagement status.",
+    # Header Banner
+    st.markdown(
+        f"""
+        <div class="main-header">
+            <h1>👥 KLIP Corporate Facilitator Performance 2026</h1>
+            <p>Corporate Facilitator Activity, Project Submission & Completion Tracking • 2026 Period</p>
+            <div class="header-pills">
+                <span class="pill">⚡ Last Sync: {sync_time_str}</span>
+                <span class="pill">👥 Total Facilitators: {len(df_fas_raw):,} Persons</span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
-# Filter table based on selected status view
-if table_filter_view == "Show Engaged":
-    df_table = df_filtered[df_filtered["Engagement_Status"] == "Engaged"]
-elif table_filter_view == "Show Non-Engaged":
-    df_table = df_filtered[df_filtered["Engagement_Status"] == "Non-Engaged"]
-else:
-    df_table = df_filtered
+    # Filter Bar
+    with st.container(border=True):
+        fcol1, fcol2, fcol3 = st.columns([1.5, 1.5, 1])
 
-with table_col3:
-    export_prefix = "engaged_" if table_filter_view == "Show Engaged" else ("non_engaged_" if table_filter_view == "Show Non-Engaged" else "")
-    csv_data = df_table.to_csv(index=False).encode("utf-8")
-    st.download_button(
-        label="📥 Export Data (CSV)",
-        data=csv_data,
-        file_name=f"klip_finance_{export_prefix}export_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-        mime="text/csv",
-        use_container_width=True,
+        with fcol1:
+            all_funcs = sorted(df_fas_raw["Function"].dropna().unique().tolist()) if "Function" in df_fas_raw.columns else []
+            selected_func = st.selectbox("Function / Department", options=["All Functions"] + all_funcs, index=0)
+
+        with fcol2:
+            fas_search = st.text_input("Search Facilitator Name", placeholder="Type facilitator name...")
+
+        with fcol3:
+            st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
+            refresh_clicked = st.button("🔄 Refresh Data", type="primary", use_container_width=True, key="refresh_fas")
+
+    if refresh_clicked:
+        perform_drive_sync()
+
+    # Filter Data
+    df_fas = df_fas_raw.copy()
+    if selected_func != "All Functions":
+        df_fas = df_fas[df_fas["Function"] == selected_func]
+    if fas_search.strip():
+        df_fas = df_fas[df_fas["Nama"].astype(str).str.lower().str.contains(fas_search.strip().lower(), na=False)]
+
+    # Metrics
+    tot_facilitators = len(df_fas)
+    tot_submitted = int(df_fas["Submitted 2026"].sum()) if "Submitted 2026" in df_fas.columns else 0
+    tot_registered = int(df_fas["Registered 2026"].sum()) if "Registered 2026" in df_fas.columns else 0
+    tot_finished = int(df_fas["Finished 2026"].sum()) if "Finished 2026" in df_fas.columns else 0
+    overall_fin_rate = (tot_finished / tot_submitted * 100) if tot_submitted > 0 else 0.0
+
+    # KPI Cards
+    kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
+    with kpi1:
+        render_metric_card("Total Facilitators", f"{tot_facilitators:,}", "Active Facilitators", "info")
+    with kpi2:
+        render_metric_card("Total Submitted (2026)", f"{tot_submitted:,}", "All Project Submissions", "info")
+    with kpi3:
+        render_metric_card("Registered (2026)", f"{tot_registered:,}", f"{(tot_registered/tot_submitted*100):.1f}% of submitted" if tot_submitted > 0 else "0%", "warning")
+    with kpi4:
+        render_metric_card("Finished (2026)", f"{tot_finished:,}", f"{(tot_finished/tot_submitted*100):.1f}% of submitted" if tot_submitted > 0 else "0%", "success")
+    with kpi5:
+        render_metric_card("Overall % Finished", f"{overall_fin_rate:.1f}%", "Completion Metric", "success" if overall_fin_rate >= 50 else "warning")
+
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+
+    # Chart Facilitator Performance
+    with st.container(border=True):
+        st.markdown('<div class="section-title">📊 Facilitator Project Progression Comparison (Submitted vs Registered vs Finished)</div>', unsafe_allow_html=True)
+        if len(df_fas) > 0:
+            df_chart = df_fas.sort_values(by="Submitted 2026", ascending=True).copy()
+            
+            fig_fas = go.Figure()
+            fig_fas.add_trace(go.Bar(
+                y=df_chart["Nama"],
+                x=df_chart["Submitted 2026"],
+                name="Submitted",
+                orientation="h",
+                marker_color="#2563EB",
+                text=df_chart["Submitted 2026"],
+                textposition="inside",
+                insidetextfont=dict(color="#FFFFFF", weight="bold"),
+            ))
+            fig_fas.add_trace(go.Bar(
+                y=df_chart["Nama"],
+                x=df_chart["Registered 2026"],
+                name="Registered",
+                orientation="h",
+                marker_color="#F59E0B",
+                text=df_chart["Registered 2026"],
+                textposition="inside",
+                insidetextfont=dict(color="#FFFFFF", weight="bold"),
+            ))
+            fig_fas.add_trace(go.Bar(
+                y=df_chart["Nama"],
+                x=df_chart["Finished 2026"],
+                name="Finished",
+                orientation="h",
+                marker_color="#10B981",
+                text=df_chart["Finished 2026"],
+                textposition="inside",
+                insidetextfont=dict(color="#FFFFFF", weight="bold"),
+            ))
+
+            fig_fas.update_layout(
+                barmode="group",
+                xaxis=dict(showgrid=False, title=None, tickfont=dict(family="Plus Jakarta Sans", size=11, color="#0F172A", weight="bold")),
+                yaxis=dict(showgrid=False, tickfont=dict(family="Plus Jakarta Sans", size=11, color="#0F172A", weight="bold")),
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1.0, font=dict(family="Plus Jakarta Sans", size=12)),
+                margin=dict(t=30, b=20, l=10, r=10),
+                height=max(380, len(df_chart) * 28),
+            )
+            st.plotly_chart(fig_fas, use_container_width=True)
+        else:
+            st.info("No facilitator records available for the selected filters.")
+
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+
+    # Table Facilitator Performance
+    with st.container(border=True):
+        st.markdown(f'<div class="section-title">📋 Facilitator Performance Master Table ({len(df_fas):,} Persons)</div>', unsafe_allow_html=True)
+        st.dataframe(
+            df_fas[["Nama", "Function", "Submitted 2026", "Registered 2026", "Finished 2026", "%Finished"]],
+            use_container_width=True,
+            height=450,
+            column_config={
+                "Nama": st.column_config.TextColumn("𝗙𝗮𝘀𝗶𝗹𝗶𝘁𝗮𝘁𝗼𝗿 𝗡𝗮𝗺𝗲", width="large"),
+                "Function": st.column_config.TextColumn("𝗙𝘂𝗻𝗰𝘁𝗶𝗼𝗻 / 𝗗𝗲𝗽𝘁", width="large"),
+                "Submitted 2026": st.column_config.NumberColumn("𝗦𝘂𝗯𝗺𝗶𝘁𝘁𝗲𝗱 (𝟮𝟬𝟮𝟲)", width="small", format="%d"),
+                "Registered 2026": st.column_config.NumberColumn("𝗥𝗲𝗴𝗶𝘀𝘁𝗲𝗿𝗲𝗱 (𝟮𝟬𝟮𝟲)", width="small", format="%d"),
+                "Finished 2026": st.column_config.NumberColumn("𝗙𝗶𝗻𝗶𝘀𝗵𝗲𝗱 (𝟮𝟬𝟮𝟲)", width="small", format="%d"),
+                "%Finished": st.column_config.TextColumn("% 𝗙𝗶𝗻𝗶𝘀𝗵𝗲𝗱 𝗥𝗮𝘁𝗲", width="medium"),
+            },
+            hide_index=True,
+        )
+
+
+# ==============================================================================
+# 3. HALAMAN: SUBMISSION 2026
+# ==============================================================================
+elif selected_page == "Submission 2026":
+    df_sub_raw = load_submission_data()
+
+    if df_sub_raw is None:
+        st.warning("⚠️ File data Submission belum ditemukan. Mengunduh data dari Google Drive...")
+        perform_drive_sync()
+        st.stop()
+
+    sync_time_str = datetime.datetime.fromtimestamp(SUBMISSION_CSV_PATH.stat().st_mtime).strftime("%d %b %Y, %H:%M") if SUBMISSION_CSV_PATH.exists() else "-"
+
+    # Header Banner
+    st.markdown(
+        f"""
+        <div class="main-header">
+            <h1>📝 KLIP Submission & Project Monitoring 2026</h1>
+            <p>Project Pipeline, Stage Progress, Monthly Ingestion & Implementation Monitoring</p>
+            <div class="header-pills">
+                <span class="pill">⚡ Last Sync: {sync_time_str}</span>
+                <span class="pill">📑 Total Projects: {len(df_sub_raw):,} Submissions</span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
-if table_filter_view == "Show Engaged":
-    st.caption(f"Showing **{len(df_table):,}** records *(🟢 Filter: Engaged)* from total **{len(df_raw):,}** employees.")
-elif table_filter_view == "Show Non-Engaged":
-    st.caption(f"Showing **{len(df_table):,}** records *(🔴 Filter: Non-Engaged)* from total **{len(df_raw):,}** employees.")
-else:
-    st.caption(f"Showing **{len(df_table):,}** records from total **{len(df_raw):,}** employees.")
+    # Filter Bar
+    with st.container(border=True):
+        fcol1, fcol2, fcol3, fcol4 = st.columns([1.2, 1.2, 1.4, 0.9])
 
-display_cols = [
-    col for col in [
-        "Loc_Type",
-        "Employee_ID",
-        "Employee_Name",
-        "Status_PA",
-        "Engagement_Status",
-        "Leader",
-        "Sponsor",
-        "Member",
-        "Fasilitator",
-        "Directorate",
-        "Division",
-        "Company_Name",
-        "Engagement_Score",
-        "Completion_Date",
-    ]
-    if col in df_table.columns
-]
+        with fcol1:
+            all_stages = ["All Stages", "PROPOSAL", "IMPLEMENTATION", "CLOSING", "FINISHED"]
+            selected_stage = st.selectbox("KLIP Stage", options=all_stages, index=0)
 
-st.dataframe(
-    df_table[display_cols],
-    use_container_width=True,
-    height=450,
-    column_config={
-        "Loc_Type": st.column_config.TextColumn("𝗟𝗼𝗰𝗮𝘁𝗶𝗼𝗻", width="small"),
-        "Employee_ID": st.column_config.TextColumn("𝗡𝗜𝗞 / 𝗜𝗗", width="medium"),
-        "Employee_Name": st.column_config.TextColumn("𝗘𝗺𝗽𝗹𝗼𝘆𝗲𝗲 𝗡𝗮𝗺𝗲", width="large"),
-        "Status_PA": st.column_config.TextColumn("𝗦𝘁𝗮𝘁𝘂𝘀 𝗣𝗔", width="small"),
-        "Engagement_Status": st.column_config.TextColumn("𝗦𝘁𝗮𝘁𝘂𝘀", width="medium"),
-        "Leader": st.column_config.NumberColumn("𝗟𝗲𝗮𝗱𝗲𝗿", width="small", format="%d"),
-        "Sponsor": st.column_config.NumberColumn("𝗦𝗽𝗼𝗻𝘀𝗼𝗿", width="small", format="%d"),
-        "Member": st.column_config.NumberColumn("𝗠𝗲𝗺𝗯𝗲𝗿", width="small", format="%d"),
-        "Fasilitator": st.column_config.NumberColumn("𝗙𝗮𝘀𝗶𝗹𝗶𝘁𝗮𝘁𝗼𝗿", width="small", format="%d"),
-        "Directorate": st.column_config.TextColumn("𝗗𝗶𝗿𝗲𝗰𝘁𝗼𝗿𝗮𝘁𝗲", width="medium"),
-        "Division": st.column_config.TextColumn("𝗗𝗶𝘃𝗶𝘀𝗶𝗼𝗻", width="large"),
-        "Company_Name": st.column_config.TextColumn("𝗖𝗼𝗺𝗽𝗮𝗻𝘆", width="medium"),
-        "Engagement_Score": st.column_config.ProgressColumn(
-            "𝗘𝗻𝗴𝗮𝗴𝗲𝗺𝗲𝗻𝘁 𝗦𝗰𝗼𝗿𝗲",
-            help="Employee Participation Score (0 - 100)",
-            format="%d",
-            min_value=0,
-            max_value=100,
-        ),
-        "Completion_Date": st.column_config.TextColumn("𝗖𝗼𝗺𝗽𝗹𝗲𝘁𝗶𝗼𝗻 𝗗𝗮𝘁𝗲", width="small"),
-    },
-    hide_index=True,
-)
+        with fcol2:
+            all_funcs = ["All Functions"] + sorted(df_sub_raw["Function"].dropna().unique().tolist()) if "Function" in df_sub_raw.columns else ["All Functions"]
+            selected_func = st.selectbox("Function", options=all_funcs, index=0)
 
-# Footer
+        with fcol3:
+            sub_search = st.text_input("Search Title / No.KLIP / Leader / Fasilitator", placeholder="Search project keyword...")
+
+        with fcol4:
+            st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
+            refresh_clicked = st.button("🔄 Refresh Data", type="primary", use_container_width=True, key="refresh_sub")
+
+    if refresh_clicked:
+        perform_drive_sync()
+
+    # Filter Data
+    df_sub = df_sub_raw.copy()
+    if selected_stage != "All Stages":
+        df_sub = df_sub[df_sub["Stage"] == selected_stage]
+    if selected_func != "All Functions":
+        df_sub = df_sub[df_sub["Function"] == selected_func]
+    if sub_search.strip():
+        kw = sub_search.strip().lower()
+        df_sub = df_sub[
+            df_sub["Title"].astype(str).str.lower().str.contains(kw, na=False)
+            | df_sub["No.KLIP"].astype(str).str.lower().str.contains(kw, na=False)
+            | df_sub["Leader_Name"].astype(str).str.lower().str.contains(kw, na=False)
+            | df_sub["Fasilitator_Name"].astype(str).str.lower().str.contains(kw, na=False)
+        ]
+
+    # Metrics
+    tot_sub = len(df_sub)
+    proposal_cnt = len(df_sub[df_sub["Stage"] == "PROPOSAL"])
+    impl_cnt = len(df_sub[df_sub["Stage"] == "IMPLEMENTATION"])
+    closing_cnt = len(df_sub[df_sub["Stage"] == "CLOSING"])
+    finished_cnt = len(df_sub[df_sub["Stage"] == "FINISHED"])
+
+    # KPI Cards
+    kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
+    with kpi1:
+        render_metric_card("Total Submissions", f"{tot_sub:,}", "Active Pipeline", "info")
+    with kpi2:
+        render_metric_card("Proposal Stage", f"{proposal_cnt:,}", f"{(proposal_cnt/tot_sub*100):.1f}% of total" if tot_sub > 0 else "0%", "info")
+    with kpi3:
+        render_metric_card("Implementation", f"{impl_cnt:,}", f"{(impl_cnt/tot_sub*100):.1f}% of total" if tot_sub > 0 else "0%", "warning")
+    with kpi4:
+        render_metric_card("Closing Stage", f"{closing_cnt:,}", f"{(closing_cnt/tot_sub*100):.1f}% of total" if tot_sub > 0 else "0%", "warning")
+    with kpi5:
+        render_metric_card("Finished", f"{finished_cnt:,}", f"{(finished_cnt/tot_sub*100):.1f}% completed" if tot_sub > 0 else "0%", "success")
+
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+
+    # Charts: Side-by-Side
+    c1, c2 = st.columns([5, 7])
+
+    with c1:
+        with st.container(border=True):
+            st.markdown('<div class="section-title">📊 KLIP by Stage Distribution</div>', unsafe_allow_html=True)
+            if tot_sub > 0:
+                stage_counts = df_sub["Stage"].value_counts().reset_index()
+                stage_counts.columns = ["Stage", "Count"]
+
+                stage_colors = {
+                    "PROPOSAL": "#3B82F6",
+                    "IMPLEMENTATION": "#F59E0B",
+                    "CLOSING": "#8B5CF6",
+                    "FINISHED": "#10B981",
+                }
+
+                fig_stage = px.pie(
+                    stage_counts,
+                    names="Stage",
+                    values="Count",
+                    color="Stage",
+                    color_discrete_map=stage_colors,
+                    hole=0.45,
+                )
+                fig_stage.update_traces(
+                    textinfo="percent+value",
+                    texttemplate="<b>%{value}</b><br>(%{percent:.1%})",
+                    insidetextfont=dict(size=13, color="#FFFFFF", family="Plus Jakarta Sans", weight="bold"),
+                    marker=dict(line=dict(color="#FFFFFF", width=2)),
+                )
+                fig_stage.update_layout(
+                    showlegend=True,
+                    legend=dict(orientation="h", yanchor="bottom", y=-0.15, xanchor="center", x=0.5, font=dict(family="Plus Jakarta Sans", size=12)),
+                    margin=dict(t=10, b=30, l=10, r=10),
+                    height=300,
+                )
+                st.plotly_chart(fig_stage, use_container_width=True)
+            else:
+                st.info("No stage distribution data available.")
+
+    with c2:
+        with st.container(border=True):
+            st.markdown('<div class="section-title">📅 Submission by Month (Jan – Aug 2026)</div>', unsafe_allow_html=True)
+            if tot_sub > 0 and "Month" in df_sub.columns:
+                month_order = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
+                month_counts = df_sub["Month"].value_counts().reindex([m for m in month_order if m in df_sub["Month"].values]).fillna(0).reset_index()
+                month_counts.columns = ["Month", "Count"]
+
+                fig_month = px.bar(
+                    month_counts,
+                    x="Month",
+                    y="Count",
+                    text="Count",
+                    color_discrete_sequence=["#2563EB"],
+                )
+                fig_month.update_traces(
+                    textposition="inside",
+                    insidetextfont=dict(size=12, color="#FFFFFF", family="Plus Jakarta Sans", weight="bold"),
+                )
+
+                max_m = month_counts["Count"].max() if len(month_counts) > 0 else 5
+                for _, r in month_counts.iterrows():
+                    if r["Count"] > 0:
+                        fig_month.add_annotation(
+                            x=r["Month"],
+                            y=r["Count"],
+                            text=f"<b>{int(r['Count'])}</b>",
+                            showarrow=False,
+                            yshift=12,
+                            font=dict(family="Plus Jakarta Sans", size=12, color="#0F172A", weight="bold"),
+                        )
+
+                fig_month.update_layout(
+                    yaxis=dict(visible=False, showgrid=False, zeroline=False, range=[0, max_m * 1.3]),
+                    xaxis=dict(showgrid=False, title=None, tickfont=dict(family="Plus Jakarta Sans", size=11, color="#0F172A", weight="bold")),
+                    margin=dict(t=30, b=20, l=10, r=10),
+                    height=300,
+                )
+                st.plotly_chart(fig_month, use_container_width=True)
+            else:
+                st.info("No monthly trend data available.")
+
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+
+    # Table Submissions
+    with st.container(border=True):
+        st.markdown(f'<div class="section-title">📋 KLIP Project Submissions Master Table ({len(df_sub):,} Projects)</div>', unsafe_allow_html=True)
+
+        display_sub_cols = [
+            c for c in [
+                "No.KLIP", "Title", "Leader_Name", "Fasilitator_Name", "Function",
+                "Stage", "Status", "Submitted", "Registered", "Finished",
+            ] if c in df_sub.columns
+        ]
+
+        st.dataframe(
+            df_sub[display_sub_cols],
+            use_container_width=True,
+            height=450,
+            column_config={
+                "No.KLIP": st.column_config.TextColumn("𝗡𝗼. 𝗞𝗟𝗜𝗣", width="medium"),
+                "Title": st.column_config.TextColumn("𝗣𝗿𝗼𝗷𝗲𝗰𝘁 𝗧𝗶𝘁𝗹𝗲", width="large"),
+                "Leader_Name": st.column_config.TextColumn("𝗟𝗲𝗮𝗱𝗲𝗿", width="medium"),
+                "Fasilitator_Name": st.column_config.TextColumn("𝗙𝗮𝘀𝗶𝗹𝗶𝘁𝗮𝘁𝗼𝗿", width="medium"),
+                "Function": st.column_config.TextColumn("𝗙𝘂𝗻𝗰𝘁𝗶𝗼𝗻", width="medium"),
+                "Stage": st.column_config.TextColumn("𝗦𝘁𝗮𝗴𝗲", width="small"),
+                "Status": st.column_config.TextColumn("𝗦𝘁𝗮𝘁𝘂𝘀", width="medium"),
+                "Submitted": st.column_config.TextColumn("𝗦𝘂𝗯𝗺𝗶𝘁𝘁𝗲𝗱", width="small"),
+                "Registered": st.column_config.TextColumn("𝗥𝗲𝗴𝗶𝘀𝘁𝗲𝗿𝗲𝗱", width="small"),
+                "Finished": st.column_config.TextColumn("𝗙𝗶𝗻𝗶𝘀𝗵𝗲𝗱", width="small"),
+            },
+            hide_index=True,
+        )
+
+# ==============================================================================
+# FOOTER
+# ==============================================================================
 st.markdown(
     """
-    <div style="text-align: center; color: #94A3B8; font-size: 0.8rem; margin-top: 40px; padding: 20px 0; border-top: 1px solid #E2E8F0;">
-        KLIP Engagement Dashboard © 2026 • Corporate Finance Analytics Engine • Powered by Streamlit & Plotly
+    <div style="text-align: center; color: #94A3B8; font-size: 0.8rem; margin-top: 35px; padding: 20px 0; border-top: 1px solid #E2E8F0;">
+        KLIP Analytics Multi-Page Dashboard © 2026 • Corporate Finance Analytics Engine • Powered by Streamlit & Plotly
     </div>
     """,
     unsafe_allow_html=True,
