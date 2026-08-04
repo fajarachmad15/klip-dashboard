@@ -823,6 +823,7 @@ if total_filtered > 0:
 
         ascending_sort = (div_sort_order == "Lowest to Highest")
 
+        max_y = 10
         if div_status_view == "Show Engaged":
             div_data = df_filtered[df_filtered["Engagement_Status"] == "Engaged"]
             if len(div_data) > 0:
@@ -830,6 +831,7 @@ if total_filtered > 0:
                 div_grouped["Engagement_Status"] = "Engaged"
                 div_grouped = div_grouped.sort_values(by="Count", ascending=ascending_sort)
                 div_order = div_grouped["Division_Short"].tolist()
+                max_y = div_grouped["Count"].max()
 
                 fig_div = px.bar(
                     div_grouped,
@@ -837,18 +839,16 @@ if total_filtered > 0:
                     y="Count",
                     color="Engagement_Status",
                     color_discrete_map=color_map,
-                    text="Count",
                     category_orders={"Division_Short": div_order},
                     hover_name="Division",
                     labels={"Count": "Employees", "Division_Short": "Division", "Engagement_Status": "Status"},
                 )
                 fig_div.update_traces(
                     textposition="outside",
-                    textfont=dict(color="#059669", size=11, family="Plus Jakarta Sans, sans-serif"),
+                    texttemplate="<b>%{y}</b>",
+                    textfont=dict(color="#0F172A", size=12, family="Plus Jakarta Sans, sans-serif"),
                     cliponaxis=False,
                 )
-                max_val = div_grouped["Count"].max() if len(div_grouped) > 0 else 10
-                fig_div.update_yaxes(range=[0, max_val * 1.18])
             else:
                 fig_div = None
 
@@ -859,6 +859,7 @@ if total_filtered > 0:
                 div_grouped["Engagement_Status"] = "Non-Engaged"
                 div_grouped = div_grouped.sort_values(by="Count", ascending=ascending_sort)
                 div_order = div_grouped["Division_Short"].tolist()
+                max_y = div_grouped["Count"].max()
 
                 fig_div = px.bar(
                     div_grouped,
@@ -866,18 +867,16 @@ if total_filtered > 0:
                     y="Count",
                     color="Engagement_Status",
                     color_discrete_map=color_map,
-                    text="Count",
                     category_orders={"Division_Short": div_order},
                     hover_name="Division",
                     labels={"Count": "Employees", "Division_Short": "Division", "Engagement_Status": "Status"},
                 )
                 fig_div.update_traces(
                     textposition="outside",
-                    textfont=dict(color="#DC2626", size=11, family="Plus Jakarta Sans, sans-serif"),
+                    texttemplate="<b>%{y}</b>",
+                    textfont=dict(color="#0F172A", size=12, family="Plus Jakarta Sans, sans-serif"),
                     cliponaxis=False,
                 )
-                max_val = div_grouped["Count"].max() if len(div_grouped) > 0 else 10
-                fig_div.update_yaxes(range=[0, max_val * 1.18])
             else:
                 fig_div = None
 
@@ -886,6 +885,7 @@ if total_filtered > 0:
             div_totals = df_filtered.groupby(["Division", "Division_Short"]).size().reset_index(name="Total")
             div_totals = div_totals.sort_values(by="Total", ascending=ascending_sort)
             div_order = div_totals["Division_Short"].tolist()
+            max_y = div_totals["Total"].max() if len(div_totals) > 0 else 10
 
             div_grouped = (
                 df_filtered.groupby(["Division", "Division_Short", "Engagement_Status"])
@@ -911,33 +911,32 @@ if total_filtered > 0:
             )
 
             # Add total count annotations directly above each stacked bar
-            max_val = div_totals["Total"].max() if len(div_totals) > 0 else 10
             for _, row in div_totals.iterrows():
                 fig_div.add_annotation(
                     x=row["Division_Short"],
                     y=row["Total"],
                     text=f"<b>{row['Total']}</b>",
                     showarrow=False,
-                    yshift=10,
-                    font=dict(color="#1E293B", size=11, family="Plus Jakarta Sans, sans-serif"),
+                    yshift=12,
+                    font=dict(color="#0F172A", size=12, family="Plus Jakarta Sans, sans-serif"),
                 )
-            fig_div.update_yaxes(range=[0, max_val * 1.18])
 
         if fig_div is not None:
             fig_div.update_layout(
-                margin=dict(t=35, b=40, l=40, r=20),
+                margin=dict(t=40, b=30, l=10, r=10),
                 height=420,
                 showlegend=False,
                 xaxis=dict(
-                    tickangle=0,
-                    gridcolor="#E2E8F0",
-                    tickfont=dict(color="#1E293B", size=10, family="Plus Jakarta Sans, sans-serif"),
+                    showgrid=False,
                     title=None,
+                    tickangle=0,
+                    tickfont=dict(color="#1E293B", size=11, family="Plus Jakarta Sans, sans-serif"),
                 ),
                 yaxis=dict(
-                    gridcolor="#E2E8F0",
-                    tickfont=dict(color="#1E293B", size=11, family="Plus Jakarta Sans, sans-serif"),
-                    title=dict(text="Number of Employees", font=dict(color="#0F172A", size=12)),
+                    visible=False,
+                    showgrid=False,
+                    zeroline=False,
+                    range=[0, max_y * 1.2],
                 ),
                 plot_bgcolor="rgba(0,0,0,0)",
                 paper_bgcolor="rgba(0,0,0,0)",
