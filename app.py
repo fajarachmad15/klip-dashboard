@@ -164,23 +164,22 @@ st.markdown(
         max-width: 95% !important;
     }
 
-    /* Perluas tinggi menu dropdown & pastikan z-index di atas banner */
-    div[data-baseweb="popover"],
-    div[data-baseweb="popover"] > div,
-    div[data-baseweb="popover"] div[role="listbox"],
-    div[data-baseweb="select"] ul,
-    div[data-baseweb="popover"] ul,
-    ul[data-baseweb="menu"] {
-        max-height: 350px !important;
+    /* Force BaseWeb Popover (Dropdown Streamlit) to open downwards */
+    div[data-baseweb="popover"] {
+        top: 100% !important;
+        bottom: auto !important;
+        transform: none !important;
+        margin-top: 6px !important;
         z-index: 999999 !important;
     }
-
-    /* Styling Tag Multiselect agar ringkas dan rapi */
-    div[data-baseweb="tag"] {
-        font-size: 0.72rem !important;
-        padding: 2px 6px !important;
-        margin: 2px !important;
-        height: auto !important;
+    
+    /* Set max height and scroll for clean dropdown view */
+    div[data-baseweb="popover"] ul[role="listbox"],
+    div[data-baseweb="popover"] div[role="listbox"],
+    div[data-baseweb="select"] ul,
+    ul[data-baseweb="menu"] {
+        max-height: 380px !important;
+        overflow-y: auto !important;
     }
 
     /* Optimasi Tampilan Layar HP / Mobile */
@@ -465,16 +464,20 @@ with st.container(border=True):
     fcol1, fcol2, fcol3, fcol4 = st.columns([1.2, 1, 1.2, 1])
 
     with fcol1:
-        if "Division" in df_raw.columns:
+        if "Division_Short" in df_raw.columns:
+            short_divisions = sorted([d for d in df_raw["Division_Short"].dropna().unique().tolist() if str(d).strip() not in ["-", ""]])
+            division_options = ["All Division"] + short_divisions
+        elif "Division" in df_raw.columns:
             all_divisions = sorted([d for d in df_raw["Division"].dropna().unique().tolist() if str(d).strip() not in ["-", ""]])
+            division_options = ["All Division"] + all_divisions
         else:
-            all_divisions = []
+            division_options = ["All Division"]
 
-        selected_divisions = st.multiselect(
+        selected_division = st.selectbox(
             "Division",
-            options=all_divisions,
-            default=all_divisions,
-            help="Filter records by selecting one or more divisions (all selected by default).",
+            options=division_options,
+            index=0,
+            help="Filter records by a specific division or select 'All Division' to view everything.",
         )
 
     with fcol2:
@@ -522,11 +525,11 @@ if refresh_clicked:
 # Apply filters safely
 df_filtered = df_raw.copy()
 
-if selected_divisions and len(selected_divisions) > 0:
-    df_filtered = df_filtered[df_filtered["Division"].isin(selected_divisions)]
-else:
-    # If empty, fallback to all records
-    st.info("💡 No specific division selected. Displaying all divisions.")
+if selected_division and selected_division != "All Division":
+    if "Division_Short" in df_filtered.columns and selected_division in df_filtered["Division_Short"].values:
+        df_filtered = df_filtered[df_filtered["Division_Short"] == selected_division]
+    elif "Division" in df_filtered.columns:
+        df_filtered = df_filtered[df_filtered["Division"] == selected_division]
 
 if status_filter and status_filter != "All Status":
     df_filtered = df_filtered[df_filtered["Engagement_Status"] == status_filter]
