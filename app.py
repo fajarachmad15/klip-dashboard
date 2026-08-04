@@ -30,6 +30,8 @@ from fetch_drive_data import (
     generate_sample_mock_data,
 )
 
+from pdf_generator import generate_klip_pdf_report
+
 # ==============================================================================
 # KONFIGURASI HALAMAN STREAMLIT
 # ==============================================================================
@@ -546,14 +548,50 @@ def perform_drive_sync():
 
 
 # ==============================================================================
-# TOP HORIZONTAL NAVIGATION BAR (TAB MENU)
+# TOP HORIZONTAL NAVIGATION BAR & PDF EXPORT (POJOK KANAN ATAS)
 # ==============================================================================
-selected_page = st.radio(
-    "Dashboard Menu",
-    options=["Detail Engagement 2026", "Fasilitator Corporate", "Submission 2026"],
-    horizontal=True,
-    label_visibility="collapsed",
-)
+nav_col1, nav_col2 = st.columns([7.8, 2.2])
+
+with nav_col1:
+    selected_page = st.radio(
+        "Dashboard Menu",
+        options=["Detail Engagement 2026", "Fasilitator Corporate", "Submission 2026"],
+        horizontal=True,
+        label_visibility="collapsed",
+    )
+
+with nav_col2:
+    with st.popover("📄 Download PDF Laporan", use_container_width=True):
+        st.markdown("##### 📄 Export Laporan PDF")
+        st.caption("Pilih cakupan halaman laporan yang ingin di-download:")
+
+        pdf_scope = st.selectbox(
+            "Cakupan Halaman:",
+            options=["Semua Halaman", "Detail Engagement 2026", "Fasilitator Corporate", "Submission 2026"],
+            index=0,
+            key="pdf_scope_select"
+        )
+
+        df_eng_pdf = load_engagement_data()
+        df_fas_pdf = load_fasilitator_data()
+        df_sub_pdf = load_submission_data()
+
+        pdf_bytes = generate_klip_pdf_report(
+            scope=pdf_scope,
+            df_eng=df_eng_pdf,
+            df_fas=df_fas_pdf,
+            df_sub=df_sub_pdf,
+        )
+
+        clean_filename = pdf_scope.lower().replace(" ", "_")
+        st.download_button(
+            label="📥 Download PDF Now",
+            data=pdf_bytes,
+            file_name=f"KLIP_Report_{clean_filename}_{datetime.date.today()}.pdf",
+            mime="application/pdf",
+            use_container_width=True,
+            type="primary"
+        )
 
 
 # ==============================================================================
