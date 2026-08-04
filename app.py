@@ -1000,107 +1000,81 @@ elif selected_page == "Fasilitator Corporate":
         reg_bar_html = f'<div style="width:{reg_bar_w}px; height:12px; background:#FFFFFF; border-radius:2px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);"></div>' if reg > 0 else ''
         fin_bar_html = f'<div style="width:{fin_bar_w}px; height:12px; background:#FFFFFF; border-radius:2px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);"></div>' if fin > 0 else ''
 
-        table_rows.append(f"""
-        <tr style="background-color: {bg_color}; color: {text_color}; border-bottom: 1.5px solid #FFFFFF;">
-            <td style="padding: 10px 12px; text-align: left; font-weight: 700; color: {num_color}; width: 35px;">{idx}.</td>
-            <td style="padding: 10px 12px; text-align: left; font-weight: 700; letter-spacing: 0.2px;">{name}</td>
-            <td style="padding: 10px 12px; text-align: left; font-weight: 600; font-size: 0.85rem;">{func}</td>
-            <td style="padding: 10px 12px; text-align: left;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="min-width: 18px; font-weight: 700;">{sub}</span>
-                    {sub_bar_html}
-                </div>
-            </td>
-            <td style="padding: 10px 12px; text-align: left;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="min-width: 18px; font-weight: 700;">{reg}</span>
-                    {reg_bar_html}
-                </div>
-            </td>
-            <td style="padding: 10px 12px; text-align: left;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="min-width: 18px; font-weight: 700;">{fin}</span>
-                    {fin_bar_html}
-                </div>
-            </td>
-            <td style="padding: 10px 12px; text-align: right; font-weight: 800; font-size: 0.95rem;">{pct_disp}</td>
-        </tr>
-        """)
+        table_rows.append(
+            f'<tr style="background-color: {bg_color}; color: {text_color}; border-bottom: 1.5px solid #FFFFFF;">'
+            f'<td style="padding: 10px 12px; text-align: left; font-weight: 700; color: {num_color}; width: 35px;">{idx}.</td>'
+            f'<td style="padding: 10px 12px; text-align: left; font-weight: 700; letter-spacing: 0.2px;">{name}</td>'
+            f'<td style="padding: 10px 12px; text-align: left; font-weight: 600; font-size: 0.85rem;">{func}</td>'
+            f'<td style="padding: 10px 12px; text-align: left;"><div style="display: flex; align-items: center; gap: 8px;"><span style="min-width: 18px; font-weight: 700;">{sub}</span>{sub_bar_html}</div></td>'
+            f'<td style="padding: 10px 12px; text-align: left;"><div style="display: flex; align-items: center; gap: 8px;"><span style="min-width: 18px; font-weight: 700;">{reg}</span>{reg_bar_html}</div></td>'
+            f'<td style="padding: 10px 12px; text-align: left;"><div style="display: flex; align-items: center; gap: 8px;"><span style="min-width: 18px; font-weight: 700;">{fin}</span>{fin_bar_html}</div></td>'
+            f'<td style="padding: 10px 12px; text-align: right; font-weight: 800; font-size: 0.95rem;">{pct_disp}</td>'
+            f'</tr>'
+        )
 
     rows_joined = "".join(table_rows)
 
     # Executive Facilitator Performance Board HTML
-    facilitator_board_html = f"""
-    <div style="border-radius: 8px; overflow: hidden; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08); font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; margin-bottom: 25px;">
-        <!-- Top Black Header -->
-        <div style="background-color: #000000; color: #FFFFFF; padding: 18px 22px;">
-            <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 20px;">
-                <!-- Column 1: Title -->
-                <div style="flex: 1.2; min-width: 250px;">
-                    <h2 style="margin: 0; font-size: 26px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.5px;">Facilitator Performance</h2>
-                </div>
+    facilitator_board_html = (
+        '<div style="border-radius: 8px; overflow: hidden; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08); font-family: \'Plus Jakarta Sans\', -apple-system, sans-serif; margin-bottom: 25px;">'
+        '<div style="background-color: #000000; color: #FFFFFF; padding: 18px 22px;">'
+        '<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 20px;">'
+        '<div style="flex: 1.2; min-width: 250px;">'
+        '<h2 style="margin: 0; font-size: 26px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.5px;">Facilitator Performance</h2>'
+        '</div>'
+        '<div style="flex: 2.2; min-width: 330px; font-size: 11.5px; line-height: 1.5; color: #F1F5F9;">'
+        '<div><strong style="color: #FFFFFF;">Submitted 2026</strong> : KLIP yang disubmit di tahun 2026</div>'
+        '<div><strong style="color: #FFFFFF;">Registered 2026</strong> : KLIP yang masuk fase implementasi/approved CI di tahun 2026 <span style="color: #94A3B8;">(termasuk carryover submit 2024/2025)</span></div>'
+        '<div><strong style="color: #FFFFFF;">Finished 2026</strong> : KLIP status CLS-Finished (Succeed) atau IMP-Failed di tahun 2026 <span style="color: #94A3B8;">(termasuk carryover submit 2024/2025)</span></div>'
+        '<div><strong style="color: #FFFFFF;">%Finished</strong> : ∑ Finished 2026 / ∑ Registered 2026</div>'
+        '</div>'
+        '<div style="flex: 1.6; min-width: 270px; font-size: 11px; font-weight: 600; color: #FFFFFF; background: #111827; padding: 10px 14px; border-radius: 6px; border: 1px solid #1F2937;">'
+        '<div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: 700; border-bottom: 1px solid #374151; padding-bottom: 3px;">'
+        '<span>Registered ≥ 3</span><span>Registered &lt; 3</span>'
+        '</div>'
+        '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">'
+        '<span>%Finish &lt; 25% <span style="display:inline-block; width:16px; height:8px; background:#FF0000; border-radius:2px; vertical-align:middle; margin-left:4px;"></span></span>'
+        '<span>%Finish &lt; 25% <span style="display:inline-block; width:16px; height:8px; background:#FF0000; border-radius:2px; vertical-align:middle; margin-left:4px;"></span></span>'
+        '</div>'
+        '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">'
+        '<span>25% ≤ %Finish &lt; 50% <span style="display:inline-block; width:16px; height:8px; background:#FCA5A5; border-radius:2px; vertical-align:middle; margin-left:4px;"></span></span>'
+        '<span>%Finish ≥ 25% <span style="display:inline-block; width:16px; height:8px; background:#FFE4E6; border-radius:2px; vertical-align:middle; margin-left:4px;"></span></span>'
+        '</div>'
+        '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">'
+        '<span>50% ≤ %Finish &lt; 55% <span style="display:inline-block; width:16px; height:8px; background:#FEF08A; border-radius:2px; vertical-align:middle; margin-left:4px;"></span></span>'
+        '<span></span>'
+        '</div>'
+        '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">'
+        '<span>55% ≤ %Finish &lt; 70% <span style="display:inline-block; width:16px; height:8px; background:#38BDF8; border-radius:2px; vertical-align:middle; margin-left:4px;"></span></span>'
+        '<span></span>'
+        '</div>'
+        '<div style="display: flex; justify-content: space-between; align-items: center;">'
+        '<span>%Finish ≥ 70% <span style="display:inline-block; width:16px; height:8px; background:#2563EB; border-radius:2px; vertical-align:middle; margin-left:4px;"></span></span>'
+        '<span></span>'
+        '</div>'
+        '</div>'
+        '</div>'
+        '</div>'
+        '<div style="overflow-x: auto;">'
+        '<table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">'
+        '<thead>'
+        '<tr style="background-color: #000000; color: #FFFFFF; font-weight: 700; border-bottom: 2px solid #334155;">'
+        '<th style="padding: 12px; text-align: left; width: 35px;"></th>'
+        '<th style="padding: 12px; text-align: left;">Nama</th>'
+        '<th style="padding: 12px; text-align: left;">Function</th>'
+        '<th style="padding: 12px; text-align: left; width: 140px;">Submitted 2026</th>'
+        '<th style="padding: 12px; text-align: left; width: 140px;">Registered 2026</th>'
+        '<th style="padding: 12px; text-align: left; width: 140px;">Finished 2026</th>'
+        '<th style="padding: 12px; text-align: right; width: 110px;">%Finished</th>'
+        '</tr>'
+        '</thead>'
+        f'<tbody>{rows_joined}</tbody>'
+        '</table>'
+        '</div>'
+        '</div>'
+    )
 
-                <!-- Column 2: Definition Notes -->
-                <div style="flex: 2.2; min-width: 330px; font-size: 11.5px; line-height: 1.5; color: #F1F5F9;">
-                    <div><strong style="color: #FFFFFF;">Submitted 2026</strong> : KLIP yang disubmit di tahun 2026</div>
-                    <div><strong style="color: #FFFFFF;">Registered 2026</strong> : KLIP yang masuk fase implementasi/approved CI di tahun 2026 <span style="color: #94A3B8;">(termasuk carryover submit 2024/2025)</span></div>
-                    <div><strong style="color: #FFFFFF;">Finished 2026</strong> : KLIP status CLS-Finished (Succeed) atau IMP-Failed di tahun 2026 <span style="color: #94A3B8;">(termasuk carryover submit 2024/2025)</span></div>
-                    <div><strong style="color: #FFFFFF;">%Finished</strong> : ∑ Finished 2026 / ∑ Registered 2026</div>
-                </div>
-
-                <!-- Column 3: Legend / Criteria -->
-                <div style="flex: 1.6; min-width: 270px; font-size: 11px; font-weight: 600; color: #FFFFFF; background: #111827; padding: 10px 14px; border-radius: 6px; border: 1px solid #1F2937;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: 700; border-bottom: 1px solid #374151; padding-bottom: 3px;">
-                        <span>Registered ≥ 3</span>
-                        <span>Registered &lt; 3</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
-                        <span>%Finish &lt; 25% <span style="display:inline-block; width:16px; height:8px; background:#FF0000; border-radius:2px; vertical-align:middle; margin-left:4px;"></span></span>
-                        <span>%Finish &lt; 25% <span style="display:inline-block; width:16px; height:8px; background:#FF0000; border-radius:2px; vertical-align:middle; margin-left:4px;"></span></span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
-                        <span>25% ≤ %Finish &lt; 50% <span style="display:inline-block; width:16px; height:8px; background:#FCA5A5; border-radius:2px; vertical-align:middle; margin-left:4px;"></span></span>
-                        <span>%Finish ≥ 25% <span style="display:inline-block; width:16px; height:8px; background:#FFE4E6; border-radius:2px; vertical-align:middle; margin-left:4px;"></span></span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
-                        <span>50% ≤ %Finish &lt; 55% <span style="display:inline-block; width:16px; height:8px; background:#FEF08A; border-radius:2px; vertical-align:middle; margin-left:4px;"></span></span>
-                        <span></span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
-                        <span>55% ≤ %Finish &lt; 70% <span style="display:inline-block; width:16px; height:8px; background:#38BDF8; border-radius:2px; vertical-align:middle; margin-left:4px;"></span></span>
-                        <span></span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span>%Finish ≥ 70% <span style="display:inline-block; width:16px; height:8px; background:#2563EB; border-radius:2px; vertical-align:middle; margin-left:4px;"></span></span>
-                        <span></span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Table Body -->
-        <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
-                <thead>
-                    <tr style="background-color: #000000; color: #FFFFFF; font-weight: 700; border-bottom: 2px solid #334155;">
-                        <th style="padding: 12px; text-align: left; width: 35px;"></th>
-                        <th style="padding: 12px; text-align: left;">Nama</th>
-                        <th style="padding: 12px; text-align: left;">Function</th>
-                        <th style="padding: 12px; text-align: left; width: 140px;">Submitted 2026</th>
-                        <th style="padding: 12px; text-align: left; width: 140px;">Registered 2026</th>
-                        <th style="padding: 12px; text-align: left; width: 140px;">Finished 2026</th>
-                        <th style="padding: 12px; text-align: right; width: 110px;">%Finished</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {rows_joined}
-                </tbody>
-            </table>
-        </div>
-    </div>
-    """
-
-    st.markdown(facilitator_board_html, unsafe_allow_html=True)
+    st.html(facilitator_board_html)
 
 
 # ==============================================================================
