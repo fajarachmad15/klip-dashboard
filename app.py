@@ -57,45 +57,62 @@ st.markdown(
         display: none !important;
     }
 
-    /* Lebarkan Container Utama */
+    /* Lebarkan Container Utama & Berikan Ruang Atas yang Cukup Agar Tidak Tertutup Header */
     .block-container {
-        padding-top: 1.5rem !important;
+        padding-top: 4.25rem !important;
         padding-left: 2rem !important;
         padding-right: 2rem !important;
+        padding-bottom: 3rem !important;
         max-width: 95% !important;
+    }
+
+    /* Pastikan header Streamlit tidak menutupi tab */
+    header[data-testid="stHeader"] {
+        background: transparent !important;
+        z-index: 1 !important;
     }
 
     /* Horizontal Tab Navigation Bar Modern */
     div[data-testid="stRadio"] {
-        margin-bottom: 0.8rem !important;
+        margin-top: 0.2rem !important;
+        margin-bottom: 1.2rem !important;
+        overflow: visible !important;
+        z-index: 10 !important;
     }
 
     div[data-testid="stRadio"] > div {
         display: flex !important;
         flex-direction: row !important;
-        gap: 10px !important;
+        flex-wrap: wrap !important;
+        gap: 12px !important;
         background: transparent !important;
-        padding: 0 !important;
+        padding: 4px 0 !important;
+        align-items: center !important;
     }
 
     div[data-testid="stRadio"] label {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
         background-color: #F1F5F9 !important;
         border: 1.5px solid #CBD5E1 !important;
-        padding: 9px 20px !important;
-        border-radius: 9px !important;
+        padding: 10px 22px !important;
+        border-radius: 10px !important;
         font-weight: 700 !important;
-        font-size: 0.92rem !important;
+        font-size: 0.95rem !important;
         font-family: 'Plus Jakarta Sans', sans-serif !important;
         color: #1E293B !important;
         cursor: pointer !important;
         transition: all 0.2s ease-in-out !important;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+        margin: 0 !important;
     }
 
     div[data-testid="stRadio"] label:hover {
         background-color: #E2E8F0 !important;
         border-color: #94A3B8 !important;
         color: #0F172A !important;
+        transform: translateY(-1px);
     }
 
     div[data-testid="stRadio"] label[data-checked="true"],
@@ -103,7 +120,7 @@ st.markdown(
         background-color: #2563EB !important;
         color: #FFFFFF !important;
         border-color: #2563EB !important;
-        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.28) !important;
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3) !important;
     }
 
     div[data-testid="stRadio"] label[data-checked="true"] p,
@@ -283,7 +300,7 @@ st.markdown(
         .block-container {
             padding-left: 1rem !important;
             padding-right: 1rem !important;
-            padding-top: 1rem !important;
+            padding-top: 3.5rem !important;
         }
     }
     </style>
