@@ -1172,19 +1172,21 @@ elif selected_page == "Submission 2026":
     impl_cnt = len(df_sub[df_sub["Stage"] == "IMPLEMENTATION"])
     closing_cnt = len(df_sub[df_sub["Stage"] == "CLOSING"])
     finished_cnt = len(df_sub[df_sub["Stage"] == "FINISHED"])
+    registered_cnt = impl_cnt + closing_cnt + finished_cnt
+    sub_fin_rate = (finished_cnt / registered_cnt * 100) if registered_cnt > 0 else 0.0
 
     # KPI Cards
     kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
     with kpi1:
-        render_metric_card("Total Submissions", f"{tot_sub:,}", "Active Pipeline", "info")
+        render_metric_card("Total Submissions", f"{tot_sub:,}", "Active Pipeline (regno)", "info")
     with kpi2:
         render_metric_card("Proposal Stage", f"{proposal_cnt:,}", f"{(proposal_cnt/tot_sub*100):.1f}% of total" if tot_sub > 0 else "0%", "danger")
     with kpi3:
-        render_metric_card("Implementation", f"{impl_cnt:,}", f"{(impl_cnt/tot_sub*100):.1f}% of total" if tot_sub > 0 else "0%", "danger")
+        render_metric_card("Registered (2026)", f"{registered_cnt:,}", f"Impl: {impl_cnt} • Closing: {closing_cnt}", "danger")
     with kpi4:
-        render_metric_card("Closing Stage", f"{closing_cnt:,}", f"{(closing_cnt/tot_sub*100):.1f}% of total" if tot_sub > 0 else "0%", "danger")
+        render_metric_card("Finished (2026)", f"{finished_cnt:,}", f"{(finished_cnt/registered_cnt*100):.1f}% of registered" if registered_cnt > 0 else "0%", "info")
     with kpi5:
-        render_metric_card("Finished", f"{finished_cnt:,}", f"{(finished_cnt/tot_sub*100):.1f}% completed" if tot_sub > 0 else "0%", "info")
+        render_metric_card("Overall % Finished", f"{sub_fin_rate:.2f}%", "% Finished / Registered", "info" if sub_fin_rate >= 50 else "danger")
 
     st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
