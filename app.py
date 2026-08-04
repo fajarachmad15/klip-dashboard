@@ -999,11 +999,13 @@ elif selected_page == "Fasilitator Corporate":
 
             fig_fas.update_layout(
                 barmode="group",
+                bargap=0.28,
+                bargroupgap=0.1,
                 xaxis=dict(showgrid=False, title=None, tickfont=dict(family="Plus Jakarta Sans", size=11, color="#0F172A", weight="bold")),
                 yaxis=dict(showgrid=False, tickfont=dict(family="Plus Jakarta Sans", size=11, color="#0F172A", weight="bold")),
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1.0, font=dict(family="Plus Jakarta Sans", size=12)),
                 margin=dict(t=30, b=20, l=10, r=10),
-                height=max(380, len(df_chart) * 28),
+                height=max(550, len(df_chart) * 52),
             )
             st.plotly_chart(fig_fas, use_container_width=True, config={"displayModeBar": False})
         else:
