@@ -57,26 +57,35 @@ st.markdown(
         display: none !important;
     }
 
-    /* Lebarkan Container Utama & Berikan Ruang Atas yang Cukup Agar Tidak Tertutup Header */
+    /* Sembunyikan Seluruh Header, Toolbar, Share, Star, Edit, Github & Menu Bawaan Streamlit */
+    #MainMenu,
+    header,
+    header[data-testid="stHeader"],
+    .stAppHeader,
+    [data-testid="stToolbar"],
+    [data-testid="stToolbarActions"],
+    [data-testid="stDecoration"],
+    [data-testid="stStatusWidget"],
+    .stAppDeployButton,
+    div[class*="viewerBadge"],
+    footer {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+
+    /* Lebarkan Container Utama & Atur Padding Atas yang Bersih dan Proporsional */
     .block-container {
-        padding-top: 4.25rem !important;
+        padding-top: 1.5rem !important;
         padding-left: 2rem !important;
         padding-right: 2rem !important;
         padding-bottom: 3rem !important;
         max-width: 95% !important;
-    }
-
-    /* Pastikan header Streamlit & action toolbar tetap di posisi paling atas dan TIDAK floating/sticky saat di-scroll */
-    header[data-testid="stHeader"],
-    .stAppHeader,
-    [data-testid="stToolbar"],
-    .stAppToolbar,
-    div[data-testid="stDecoration"] {
-        position: absolute !important;
-        top: 0 !important;
-        right: 0 !important;
-        background: transparent !important;
-        z-index: 1 !important;
     }
 
     /* Hilangkan modebar / floating camera & zoom icons pada grafik Plotly */
