@@ -957,77 +957,199 @@ elif selected_page == "Fasilitator Corporate":
     with kpi5:
         render_metric_card("Overall % Finished", f"{overall_fin_rate:.1f}%", "Completion Metric", "info" if overall_fin_rate >= 50 else "danger")
 
-    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+    # Render Facilitator Performance Banner & Table (Exact Replica of Reference Design)
+    if len(df_fas) > 0:
+        max_sub = max(df_fas["Submitted 2026"].max(), 1)
+        max_reg = max(df_fas["Registered 2026"].max(), 1)
+        max_fin = max(df_fas["Finished 2026"].max(), 1)
 
-    # Chart Facilitator Performance
-    with st.container(border=True):
-        st.markdown('<div class="section-title">📊 Facilitator Project Progression Comparison (Submitted vs Registered vs Finished)</div>', unsafe_allow_html=True)
-        if len(df_fas) > 0:
-            df_chart = df_fas.sort_values(by="Submitted 2026", ascending=True).copy()
-            
-            fig_fas = go.Figure()
-            fig_fas.add_trace(go.Bar(
-                y=df_chart["Nama"],
-                x=df_chart["Submitted 2026"],
-                name="Submitted",
-                orientation="h",
-                marker_color="#2563EB",
-                text=df_chart["Submitted 2026"],
-                textposition="inside",
-                insidetextfont=dict(color="#FFFFFF", weight="bold"),
-            ))
-            fig_fas.add_trace(go.Bar(
-                y=df_chart["Nama"],
-                x=df_chart["Registered 2026"],
-                name="Registered (Pending)",
-                orientation="h",
-                marker_color="#EF4444",
-                text=df_chart["Registered 2026"],
-                textposition="inside",
-                insidetextfont=dict(color="#FFFFFF", weight="bold"),
-            ))
-            fig_fas.add_trace(go.Bar(
-                y=df_chart["Nama"],
-                x=df_chart["Finished 2026"],
-                name="Finished (Done)",
-                orientation="h",
-                marker_color="#1D4ED8",
-                text=df_chart["Finished 2026"],
-                textposition="inside",
-                insidetextfont=dict(color="#FFFFFF", weight="bold"),
-            ))
+        rows_html = []
+        for idx, (_, r) in enumerate(df_fas.iterrows()):
+            nama = str(r["Nama"])
+            func = str(r["Function"])
+            sub = int(r["Submitted 2026"])
+            reg = int(r["Registered 2026"])
+            fin = int(r["Finished 2026"])
 
-            fig_fas.update_layout(
-                barmode="group",
-                xaxis=dict(showgrid=False, title=None, tickfont=dict(family="Plus Jakarta Sans", size=11, color="#0F172A", weight="bold")),
-                yaxis=dict(showgrid=False, tickfont=dict(family="Plus Jakarta Sans", size=11, color="#0F172A", weight="bold")),
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1.0, font=dict(family="Plus Jakarta Sans", size=12)),
-                margin=dict(t=30, b=20, l=10, r=10),
-                height=max(380, len(df_chart) * 28),
-            )
-            st.plotly_chart(fig_fas, use_container_width=True, config={"displayModeBar": False})
-        else:
-            st.info("No facilitator records available for the selected filters.")
+            if reg > 0:
+                fin_rate = (fin / reg) * 100
+                fin_rate_str = f"{fin_rate:.0f}%"
+            else:
+                fin_rate = None
+                fin_rate_str = "-"
 
-    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+            # Rule color classification matching Reference
+            if reg >= 3:
+                if fin_rate is None or fin_rate < 25:
+                    bg_color = "#FF0000"
+                    text_color = "#FFFFFF"
+                    no_color = "#FFFFFF"
+                    bar_bg = "rgba(255, 255, 255, 0.85)"
+                elif 25 <= fin_rate < 50:
+                    bg_color = "#FF8A80"
+                    text_color = "#7F1D1D"
+                    no_color = "#DC2626"
+                    bar_bg = "rgba(255, 255, 255, 0.85)"
+                elif 50 <= fin_rate < 55:
+                    bg_color = "#FEF08A"
+                    text_color = "#713F12"
+                    no_color = "#DC2626"
+                    bar_bg = "rgba(113, 63, 18, 0.3)"
+                elif 55 <= fin_rate < 70:
+                    bg_color = "#86EFAC"
+                    text_color = "#14532D"
+                    no_color = "#DC2626"
+                    bar_bg = "rgba(20, 83, 45, 0.3)"
+                else:
+                    bg_color = "#2563EB"
+                    text_color = "#FFFFFF"
+                    no_color = "#FFFFFF"
+                    bar_bg = "rgba(255, 255, 255, 0.85)"
+            else:
+                # reg < 3
+                if fin_rate is not None and fin_rate >= 25:
+                    bg_color = "#FFD1D1"
+                    text_color = "#DC2626"
+                    no_color = "#DC2626"
+                    bar_bg = "rgba(255, 255, 255, 0.95)"
+                else:
+                    bg_color = "#FF0000"
+                    text_color = "#FFFFFF"
+                    no_color = "#FFFFFF"
+                    bar_bg = "rgba(255, 255, 255, 0.85)"
 
-    # Table Facilitator Performance
-    with st.container(border=True):
-        st.markdown(f'<div class="section-title">📋 Facilitator Performance Master Table ({len(df_fas):,} Persons)</div>', unsafe_allow_html=True)
-        st.dataframe(
-            df_fas[["Nama", "Function", "Submitted 2026", "Registered 2026", "Finished 2026", "%Finished"]],
-            use_container_width=True,
-            height=450,
-            column_config={
-                "Nama": st.column_config.TextColumn("𝗙𝗮𝘀𝗶𝗹𝗶𝘁𝗮𝘁𝗼𝗿 𝗡𝗮𝗺𝗲", width="large"),
-                "Function": st.column_config.TextColumn("𝗙𝘂𝗻𝗰𝘁𝗶𝗼𝗻 / 𝗗𝗲𝗽𝘁", width="large"),
-                "Submitted 2026": st.column_config.NumberColumn("𝗦𝘂𝗯𝗺𝗶𝘁𝘁𝗲𝗱 (𝟮𝟬𝟮𝟲)", width="small", format="%d"),
-                "Registered 2026": st.column_config.NumberColumn("𝗥𝗲𝗴𝗶𝘀𝘁𝗲𝗿𝗲𝗱 (𝟮𝟬𝟮𝟲)", width="small", format="%d"),
-                "Finished 2026": st.column_config.NumberColumn("𝗙𝗶𝗻𝗶𝘀𝗵𝗲𝗱 (𝟮𝟬𝟮𝟲)", width="small", format="%d"),
-                "%Finished": st.column_config.TextColumn("% 𝗙𝗶𝗻𝗶𝘀𝗵𝗲𝗱 𝗥𝗮𝘁𝗲", width="medium"),
-            },
-            hide_index=True,
-        )
+            sub_bar_w = int((sub / max_sub) * 75) if max_sub > 0 and sub > 0 else 0
+            reg_bar_w = int((reg / max_reg) * 75) if max_reg > 0 and reg > 0 else 0
+            fin_bar_w = int((fin / max_fin) * 75) if max_fin > 0 and fin > 0 else 0
+
+            sub_bar_html = f'<div style="width: {sub_bar_w}px; height: 12px; background: {bar_bg}; border-radius: 2px; margin-left: 8px;"></div>' if sub > 0 else '<span style="opacity: 0.6; margin-left: 4px;">|</span>'
+            reg_bar_html = f'<div style="width: {reg_bar_w}px; height: 12px; background: {bar_bg}; border-radius: 2px; margin-left: 8px;"></div>' if reg > 0 else '<span style="opacity: 0.6; margin-left: 4px;">|</span>'
+            fin_bar_html = f'<div style="width: {fin_bar_w}px; height: 12px; background: {bar_bg}; border-radius: 2px; margin-left: 8px;"></div>' if fin > 0 else '<span style="opacity: 0.6; margin-left: 4px;">|</span>'
+
+            row_html = f"""
+            <tr style="background-color: {bg_color}; color: {text_color}; font-size: 0.82rem; font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif; border-bottom: 1.5px solid #FFFFFF;">
+                <td style="padding: 6px 10px; color: {no_color}; font-weight: 800; width: 35px; text-align: left;">{idx + 1}.</td>
+                <td style="padding: 6px 12px; text-align: left; letter-spacing: 0.01em;">{nama}</td>
+                <td style="padding: 6px 12px; text-align: left; font-size: 0.78rem;">{func}</td>
+                <td style="padding: 6px 12px; width: 140px;">
+                    <div style="display: flex; align-items: center;">
+                        <span style="min-width: 16px;">{sub}</span>
+                        {sub_bar_html}
+                    </div>
+                </td>
+                <td style="padding: 6px 12px; width: 140px;">
+                    <div style="display: flex; align-items: center;">
+                        <span style="min-width: 16px;">{reg}</span>
+                        {reg_bar_html}
+                    </div>
+                </td>
+                <td style="padding: 6px 12px; width: 140px;">
+                    <div style="display: flex; align-items: center;">
+                        <span style="min-width: 16px;">{fin}</span>
+                        {fin_bar_html}
+                    </div>
+                </td>
+                <td style="padding: 6px 12px; text-align: center; width: 85px;">{fin_rate_str}</td>
+            </tr>
+            """
+            rows_html.append(row_html)
+
+        table_body = "".join(rows_html)
+
+        full_table_html = f"""
+        <div style="background-color: #000000; color: #FFFFFF; border-radius: 4px 4px 0 0; padding: 14px 20px; font-family: 'Plus Jakarta Sans', sans-serif;">
+            <div style="display: flex; flex-direction: row; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
+                <!-- Left: Title -->
+                <div style="flex: 1.1; min-width: 220px;">
+                    <h1 style="color: #FFFFFF; font-size: 1.95rem; font-weight: 800; margin: 0; padding: 0; line-height: 1.1; letter-spacing: -0.02em;">Facilitator Performance</h1>
+                </div>
+                
+                <!-- Middle: Definitions -->
+                <div style="flex: 2.2; min-width: 320px; font-size: 0.76rem; line-height: 1.45; color: #F1F5F9;">
+                    <div style="display: grid; grid-template-columns: 110px auto; gap: 3px 6px;">
+                        <div style="font-weight: 700; color: #FFFFFF;">Submitted 2026</div>
+                        <div>: KLIP yang disubmit di tahun 2026</div>
+                        
+                        <div style="font-weight: 700; color: #FFFFFF;">Registered 2026</div>
+                        <div>: KLIP yang masuk fase implementasi/approved CI di tahun 2026 <span style="color: #CBD5E1; font-size: 0.7rem;">(termasuk carryover submit 2025)</span></div>
+                        
+                        <div style="font-weight: 700; color: #FFFFFF;">Finished 2026</div>
+                        <div>: KLIP status CLS-Finished (Succeed) atau IMP-Failed di tahun 2026 <span style="color: #CBD5E1; font-size: 0.7rem;">(termasuk carryover submit 2025)</span></div>
+                        
+                        <div style="font-weight: 700; color: #FFFFFF;">%Finished</div>
+                        <div>: ∑ Finished 2026 / ∑ Registered 2026</div>
+                    </div>
+                </div>
+
+                <!-- Right: Color Classification Legend Matrix -->
+                <div style="flex: 1.7; min-width: 270px; font-size: 0.72rem; background: rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15);">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.25); padding-bottom: 3px;">
+                        <div style="font-weight: 800; color: #FFFFFF; font-size: 0.74rem;">Registered ≥ 3</div>
+                        <div style="font-weight: 800; color: #FFFFFF; font-size: 0.74rem;">Registered &lt; 3</div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; align-items: center;">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>%Finish &lt; 25%</span>
+                            <span style="display: inline-block; width: 14px; height: 7px; background: #FF0000; border-radius: 1px;"></span>
+                        </div>
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>%Finish &lt; 25%</span>
+                            <span style="display: inline-block; width: 14px; height: 7px; background: #FF0000; border-radius: 1px;"></span>
+                        </div>
+
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>25% ≤ %Fin &lt; 50%</span>
+                            <span style="display: inline-block; width: 14px; height: 7px; background: #FF8A80; border-radius: 1px;"></span>
+                        </div>
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>%Finish ≥ 25%</span>
+                            <span style="display: inline-block; width: 14px; height: 7px; background: #FFD1D1; border: 1px solid #FF8A80; border-radius: 1px;"></span>
+                        </div>
+
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>50% ≤ %Fin &lt; 55%</span>
+                            <span style="display: inline-block; width: 14px; height: 7px; background: #FEF08A; border-radius: 1px;"></span>
+                        </div>
+                        <div></div>
+
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>55% ≤ %Fin &lt; 70%</span>
+                            <span style="display: inline-block; width: 14px; height: 7px; background: #86EFAC; border-radius: 1px;"></span>
+                        </div>
+                        <div></div>
+
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>%Finish ≥ 70%</span>
+                            <span style="display: inline-block; width: 14px; height: 7px; background: #2563EB; border-radius: 1px;"></span>
+                        </div>
+                        <div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div style="overflow-x: auto; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); border-radius: 0 0 4px 4px;">
+            <table style="width: 100%; border-collapse: collapse; background-color: #FFFFFF; font-family: 'Plus Jakarta Sans', sans-serif;">
+                <thead>
+                    <tr style="background-color: #FFFFFF; color: #0F172A; font-size: 0.83rem; font-weight: 800; border-bottom: 2px solid #E2E8F0;">
+                        <th style="padding: 10px 10px; width: 35px;"></th>
+                        <th style="padding: 10px 12px; text-align: left;">Nama</th>
+                        <th style="padding: 10px 12px; text-align: left;">Function</th>
+                        <th style="padding: 10px 12px; text-align: left; width: 140px;">Submitted 2026</th>
+                        <th style="padding: 10px 12px; text-align: left; width: 140px;">Registered 2026</th>
+                        <th style="padding: 10px 12px; text-align: left; width: 140px;">Finished 2026</th>
+                        <th style="padding: 10px 12px; text-align: center; width: 85px;">%Finished</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {table_body}
+                </tbody>
+            </table>
+        </div>
+        """
+        st.markdown(full_table_html, unsafe_allow_html=True)
+    else:
+        st.info("No facilitator records available for the selected filters.")
 
 
 # ==============================================================================
