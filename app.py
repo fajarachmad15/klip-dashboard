@@ -80,7 +80,19 @@ st.markdown(
         z-index: 10 !important;
     }
 
-    div[data-testid="stRadio"] > div {
+    /* Sembunyikan label widget 'Dashboard Menu' secara total */
+    div[data-testid="stRadio"] > label,
+    div[data-testid="stRadio"] [data-testid="stWidgetLabel"],
+    div[data-testid="stRadio"] label:not([data-baseweb="radio"]) {
+        display: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        height: 0 !important;
+        visibility: hidden !important;
+    }
+
+    div[data-testid="stRadio"] > div,
+    div[data-testid="stRadio"] div[role="radiogroup"] {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: wrap !important;
@@ -90,13 +102,14 @@ st.markdown(
         align-items: center !important;
     }
 
-    div[data-testid="stRadio"] label {
+    /* Styling Tombol Tab Murni */
+    div[data-testid="stRadio"] label[data-baseweb="radio"] {
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
         background-color: #F1F5F9 !important;
         border: 1.5px solid #CBD5E1 !important;
-        padding: 10px 22px !important;
+        padding: 10px 24px !important;
         border-radius: 10px !important;
         font-weight: 700 !important;
         font-size: 0.95rem !important;
@@ -108,30 +121,39 @@ st.markdown(
         margin: 0 !important;
     }
 
-    div[data-testid="stRadio"] label:hover {
+    div[data-testid="stRadio"] label[data-baseweb="radio"]:hover {
         background-color: #E2E8F0 !important;
         border-color: #94A3B8 !important;
         color: #0F172A !important;
         transform: translateY(-1px);
     }
 
-    div[data-testid="stRadio"] label[data-checked="true"],
-    div[data-testid="stRadio"] label:has(input:checked) {
+    div[data-testid="stRadio"] label[data-baseweb="radio"][data-checked="true"],
+    div[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) {
         background-color: #2563EB !important;
         color: #FFFFFF !important;
         border-color: #2563EB !important;
         box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3) !important;
     }
 
-    div[data-testid="stRadio"] label[data-checked="true"] p,
-    div[data-testid="stRadio"] label:has(input:checked) p {
+    div[data-testid="stRadio"] label[data-baseweb="radio"][data-checked="true"] p,
+    div[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) p {
         color: #FFFFFF !important;
         font-weight: 700 !important;
     }
 
+    /* Sembunyikan lingkaran/dot radio button agar 100% murni seperti tombol Tab */
     div[data-testid="stRadio"] input[type="radio"],
-    div[data-testid="stRadio"] [data-testid="stRadioButton"] > div:first-child {
+    div[data-testid="stRadio"] [data-testid="stRadioButton"],
+    div[data-testid="stRadio"] label[data-baseweb="radio"] > div:first-child,
+    div[data-testid="stRadio"] label[data-baseweb="radio"] > span:first-child,
+    div[data-testid="stRadio"] [data-testid="stRadioButton"] > div {
         display: none !important;
+        visibility: hidden !important;
+        width: 0 !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
 
     /* Modern Metric Card Styling */
@@ -488,7 +510,7 @@ def perform_drive_sync():
 # TOP HORIZONTAL NAVIGATION BAR (TAB MENU)
 # ==============================================================================
 selected_page = st.radio(
-    "Dashboard Menu",
+    "navigation_tabs",
     options=["Detail Engagement 2026", "Fasilitator Corporate", "Submission 2026"],
     horizontal=True,
     label_visibility="collapsed",
