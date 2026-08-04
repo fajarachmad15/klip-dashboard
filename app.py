@@ -1357,7 +1357,7 @@ elif selected_page == "Submission 2026":
                     values="Count",
                     color="Category",
                     color_discrete_map={"SLIM": "#EAB308", "ACT": "#10B981"},
-                    hole=0.65,
+                    hole=0.50,
                 )
                 fig_cat.update_traces(
                     textinfo="value",
@@ -1368,7 +1368,7 @@ elif selected_page == "Submission 2026":
                 fig_cat.update_layout(
                     showlegend=True,
                     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5, font=dict(family="Plus Jakarta Sans", size=11)),
-                    annotations=[dict(text=f"<b>{tot_sub}</b>", x=0.5, y=0.5, font=dict(size=26, color="#1E293B", family="Plus Jakarta Sans", weight="bold"), showarrow=False)],
+                    annotations=[dict(text=f"<b>{tot_sub}</b>", x=0.5, y=0.5, font=dict(size=24, color="#1E293B", family="Plus Jakarta Sans", weight="bold"), showarrow=False)],
                     margin=dict(t=35, b=10, l=10, r=10),
                     height=265,
                 )
@@ -1396,7 +1396,7 @@ elif selected_page == "Submission 2026":
                         "IMPLEMENTATION": "#10B981",
                         "FINISHED": "#8B5CF6",
                     },
-                    hole=0.65,
+                    hole=0.50,
                 )
                 fig_stg.update_traces(
                     textinfo="value",
@@ -1407,7 +1407,7 @@ elif selected_page == "Submission 2026":
                 fig_stg.update_layout(
                     showlegend=True,
                     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5, font=dict(family="Plus Jakarta Sans", size=10)),
-                    annotations=[dict(text=f"<b>{tot_sub}</b>", x=0.5, y=0.5, font=dict(size=26, color="#1E293B", family="Plus Jakarta Sans", weight="bold"), showarrow=False)],
+                    annotations=[dict(text=f"<b>{tot_sub}</b>", x=0.5, y=0.5, font=dict(size=24, color="#1E293B", family="Plus Jakarta Sans", weight="bold"), showarrow=False)],
                     margin=dict(t=35, b=10, l=10, r=10),
                     height=265,
                 )
