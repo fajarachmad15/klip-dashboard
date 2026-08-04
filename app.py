@@ -593,7 +593,7 @@ if selected_page == "Detail Engagement 2026":
         with fcol1:
             all_divisions = sorted([d for d in df_raw["Division"].dropna().unique().tolist() if str(d).strip() not in ["-", ""]]) if "Division" in df_raw.columns else []
             selected_divisions = st.multiselect(
-                "Division (Dept)",
+                "Division",
                 options=all_divisions,
                 default=[],
                 placeholder="All Divisions (Click to select...)",
@@ -932,8 +932,14 @@ elif selected_page == "Fasilitator Corporate":
         fcol1, fcol2, fcol3 = st.columns([1.5, 1.5, 1])
 
         with fcol1:
-            all_funcs = sorted(df_fas_raw["Function"].dropna().unique().tolist()) if "Function" in df_fas_raw.columns else []
-            selected_func = st.selectbox("Function / Department", options=["All Functions"] + all_funcs, index=0)
+            all_divs = sorted([d for d in df_fas_raw["Function"].dropna().unique().tolist() if str(d).strip() not in ["-", ""]]) if "Function" in df_fas_raw.columns else []
+            selected_divisions = st.multiselect(
+                "Division",
+                options=all_divs,
+                default=[],
+                placeholder="All Divisions (Click to select...)",
+                help="Select one or multiple divisions to filter the dashboard.",
+            )
 
         with fcol2:
             fas_search = st.text_input("Search Facilitator Name", placeholder="Type facilitator name...")
@@ -947,8 +953,8 @@ elif selected_page == "Fasilitator Corporate":
 
     # Filter Data
     df_fas = df_fas_raw.copy()
-    if selected_func != "All Functions":
-        df_fas = df_fas[df_fas["Function"] == selected_func]
+    if selected_divisions:
+        df_fas = df_fas[df_fas["Function"].isin(selected_divisions)]
     if fas_search.strip():
         df_fas = df_fas[df_fas["Nama"].astype(str).str.lower().str.contains(fas_search.strip().lower(), na=False)]
 
@@ -1152,8 +1158,14 @@ elif selected_page == "Submission 2026":
             selected_stage = st.selectbox("KLIP Stage", options=all_stages, index=0)
 
         with fcol2:
-            all_funcs = ["All Functions"] + sorted(df_sub_raw["Function"].dropna().unique().tolist()) if "Function" in df_sub_raw.columns else ["All Functions"]
-            selected_func = st.selectbox("Function", options=all_funcs, index=0)
+            all_divs = sorted([d for d in df_sub_raw["Function"].dropna().unique().tolist() if str(d).strip() not in ["-", ""]]) if "Function" in df_sub_raw.columns else []
+            selected_divisions = st.multiselect(
+                "Division",
+                options=all_divs,
+                default=[],
+                placeholder="All Divisions (Click to select...)",
+                help="Select one or multiple divisions to filter the dashboard.",
+            )
 
         with fcol3:
             sub_search = st.text_input("Search Title / No.KLIP / Leader / Fasilitator", placeholder="Search project keyword...")
@@ -1169,8 +1181,8 @@ elif selected_page == "Submission 2026":
     df_sub = df_sub_raw.copy()
     if selected_stage != "All Stages":
         df_sub = df_sub[df_sub["Stage"] == selected_stage]
-    if selected_func != "All Functions":
-        df_sub = df_sub[df_sub["Function"] == selected_func]
+    if selected_divisions:
+        df_sub = df_sub[df_sub["Function"].isin(selected_divisions)]
     if sub_search.strip():
         kw = sub_search.strip().lower()
         df_sub = df_sub[
