@@ -335,14 +335,24 @@ def load_engagement_data() -> Optional[pd.DataFrame]:
         df = pd.read_csv(target_path)
         col_map = {
             "Employee ID": "Employee_ID",
+            "Employee_ID": "Employee_ID",
+            "NIK": "Employee_ID",
             "Employee Name": "Employee_Name",
+            "Employee_Name": "Employee_Name",
             "Company Name": "Company_Name",
+            "Company_Name": "Company_Name",
             "Status PA": "Status_PA",
+            "Status_PA": "Status_PA",
+            "SttsPA": "Status_PA",
             "Group BU/CORP": "Group_BU_CORP",
+            "Group BU/Corp": "Group_BU_CORP",
             "Loc. Type": "Loc_Type",
             "Loc Type": "Loc_Type",
+            "Loc": "Loc_Type",
             "Location": "Loc_Type",
             "Engagement Status": "Engagement_Status",
+            "Engagement_Status": "Engagement_Status",
+            "Engagement": "Engagement_Status",
             "Score": "Engagement_Score",
             "Engagement Score": "Engagement_Score",
             "Completion Date": "Completion_Date",
@@ -351,36 +361,36 @@ def load_engagement_data() -> Optional[pd.DataFrame]:
             if old_col in df.columns and new_col not in df.columns:
                 df.rename(columns={old_col: new_col}, inplace=True)
 
-        if "Status_PA" in df.columns and "Engagement_Status" not in df.columns:
-            def infer_status(row):
-                pa_val = str(row.get("Status_PA", "")).strip().upper()
-                if pa_val == "KLIP":
-                    return "Engaged"
-                for role_col in ["Leader", "Sponsor", "Member", "Fasilitator"]:
-                    if role_col in row and pd.notna(row[role_col]):
-                        try:
-                            if float(row[role_col]) > 0:
-                                return "Engaged"
-                        except (ValueError, TypeError):
-                            pass
-                return "Non-Engaged"
-            df["Engagement_Status"] = df.apply(infer_status, axis=1)
-
-        if "Engagement_Status" not in df.columns:
-            df["Engagement_Status"] = "Non-Engaged"
-
-        if "Engagement_Score" not in df.columns:
-            df["Engagement_Score"] = df["Engagement_Status"].apply(lambda s: 100 if s == "Engaged" else 0)
-        else:
-            df["Engagement_Score"] = pd.to_numeric(df["Engagement_Score"], errors="coerce").fillna(0).astype(int)
-
         for col in ["Leader", "Sponsor", "Member", "Fasilitator"]:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0).astype(int)
             else:
                 df[col] = 0
 
-        for col in ["Employee_Name", "Employee_ID", "Division", "Directorate", "Company_Name", "Loc_Type"]:
+        if "Engagement_Status" in df.columns:
+            df["Engagement_Status"] = df["Engagement_Status"].astype(str).str.strip()
+            def clean_status(val):
+                s = str(val).strip().lower()
+                if s in ["engaged", "ikut", "true", "1"]:
+                    return "Engaged"
+                elif s in ["non-engaged", "non engaged", "belum ikut", "false", "0", "nan", "none", ""]:
+                    return "Non-Engaged"
+                return val
+            df["Engagement_Status"] = df["Engagement_Status"].apply(clean_status)
+        else:
+            def infer_status(row):
+                for role_col in ["Leader", "Sponsor", "Member", "Fasilitator"]:
+                    if role_col in row and row[role_col] > 0:
+                        return "Engaged"
+                return "Non-Engaged"
+            df["Engagement_Status"] = df.apply(infer_status, axis=1)
+
+        if "Engagement_Score" not in df.columns:
+            df["Engagement_Score"] = df["Engagement_Status"].apply(lambda s: 100 if s == "Engaged" else 0)
+        else:
+            df["Engagement_Score"] = pd.to_numeric(df["Engagement_Score"], errors="coerce").fillna(0).astype(int)
+
+        for col in ["Employee_Name", "Employee_ID", "Division", "Directorate", "Company_Name", "Loc_Type", "Status_PA"]:
             if col in df.columns:
                 df[col] = df[col].fillna("-").astype(str).str.strip()
 
@@ -648,18 +658,23 @@ if selected_page == "Detail Engagement 2026":
     with c_right:
         with st.container(border=True):
             st.markdown('<div class="section-title">👥 Role Participation Breakdown</div>', unsafe_allow_html=True)
-            leader_count = int((df_filtered["Leader"] > 0).sum()) if "Leader" in df_filtered.columns else 0
-            sponsor_count = int((df_filtered["Sponsor"] > 0).sum()) if "Sponsor" in df_filtered.columns else 0
-            member_count = int((df_filtered["Member"] > 0).sum()) if "Member" in df_filtered.columns else 0
-            fasilitator_count = int((df_filtered["Fasilitator"] > 0).sum()) if "Fasilitator" in df_filtered.columns else 0
+            leader_count = int(df_filtered["Leader"].sum()) if "Leader" in df_filtered.columns else 0
+            sponsor_count = int(df_filtered["Sponsor"].sum()) if "Sponsor" in df_filtered.columns else 0
+            member_count = int(df_filtered["Member"].sum()) if "Member" in df_filtered.columns else 0
+            fasilitator_count = int(df_filtered["Fasilitator"].sum()) if "Fasilitator" in df_filtered.columns else 0
+
+            leader_unique = int((df_filtered["Leader"] > 0).sum()) if "Leader" in df_filtered.columns else 0
+            sponsor_unique = int((df_filtered["Sponsor"] > 0).sum()) if "Sponsor" in df_filtered.columns else 0
+            member_unique = int((df_filtered["Member"] > 0).sum()) if "Member" in df_filtered.columns else 0
+            fasilitator_unique = int((df_filtered["Fasilitator"] > 0).sum()) if "Fasilitator" in df_filtered.columns else 0
 
             rcol1, rcol2 = st.columns(2)
             with rcol1:
-                render_metric_card("Leader Role", f"{leader_count:,}", f"{(leader_count/total_emp*100):.1f}% of total" if total_emp > 0 else "0%", "info")
-                render_metric_card("Member Role", f"{member_count:,}", f"{(member_count/total_emp*100):.1f}% of total" if total_emp > 0 else "0%", "info")
+                render_metric_card("Leader Role", f"{leader_count:,}", f"{(leader_unique/total_emp*100):.1f}% of total" if total_emp > 0 else "0%", "info")
+                render_metric_card("Member Role", f"{member_count:,}", f"{(member_unique/total_emp*100):.1f}% of total" if total_emp > 0 else "0%", "info")
             with rcol2:
-                render_metric_card("Sponsor Role", f"{sponsor_count:,}", f"{(sponsor_count/total_emp*100):.1f}% of total" if total_emp > 0 else "0%", "info")
-                render_metric_card("Facilitator Role", f"{fasilitator_count:,}", f"{(fasilitator_count/total_emp*100):.1f}% of total" if total_emp > 0 else "0%", "info")
+                render_metric_card("Sponsor Role", f"{sponsor_count:,}", f"{(sponsor_unique/total_emp*100):.1f}% of total" if total_emp > 0 else "0%", "info")
+                render_metric_card("Facilitator Role", f"{fasilitator_count:,}", f"{(fasilitator_unique/total_emp*100):.1f}% of total" if total_emp > 0 else "0%", "info")
 
     st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
