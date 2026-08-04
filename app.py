@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Optional, Dict, Any
 
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -342,6 +343,37 @@ st.markdown(
             padding-top: 3.5rem !important;
         }
     }
+
+    /* Print-to-PDF Media Queries untuk Screen View PDF Export */
+    @media print {
+        header, footer, [data-testid="stHeader"], [data-testid="stToolbar"],
+        div[data-testid="stRadio"], div[data-testid="stPopover"], .stButton,
+        div[data-testid="stForm"], div[data-testid="stSelectbox"],
+        div[data-testid="stMultiSelect"], div[data-testid="stTextInput"],
+        iframe, .no-print {
+            display: none !important;
+            visibility: hidden !important;
+        }
+
+        html, body, .stApp, .block-container {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            max-width: 100% !important;
+            width: 100% !important;
+        }
+
+        .stContainer, [data-testid="stVerticalBlock"] > div {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+        }
+
+        * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -561,9 +593,38 @@ with nav_col1:
     )
 
 with nav_col2:
-    with st.popover("📄 Download PDF Laporan", use_container_width=True):
-        st.markdown("##### 📄 Export Laporan PDF")
-        st.caption("Pilih cakupan halaman laporan yang ingin di-download:")
+    with st.popover("📄 Export / Download PDF", use_container_width=True):
+        st.markdown("##### 📸 PDF Tampilan Layar (Screen View)")
+        st.caption("Cetak tampilan layar aktif saat ini menjadi PDF (Teks dapat di-select/copy):")
+
+        components.html(
+            """
+            <button onclick="window.parent.print()" style="
+                width: 100%;
+                background-color: #2563EB;
+                color: white;
+                border: none;
+                padding: 9px 14px;
+                font-size: 13px;
+                font-weight: 600;
+                font-family: 'Plus Jakarta Sans', sans-serif;
+                border-radius: 6px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            " onmouseover="this.style.backgroundColor='#1D4ED8'" onmouseout="this.style.backgroundColor='#2563EB'">
+                🖨️ Save/Print Screen to PDF
+            </button>
+            """,
+            height=45,
+        )
+
+        st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
+        st.markdown("##### 📄 Export Dokumen Laporan PDF")
+        st.caption("Pilih cakupan halaman laporan untuk di-download:")
 
         pdf_scope = st.selectbox(
             "Cakupan Halaman:",
@@ -585,7 +646,7 @@ with nav_col2:
 
         clean_filename = pdf_scope.lower().replace(" ", "_")
         st.download_button(
-            label="📥 Download PDF Now",
+            label="📥 Download PDF Dokumen",
             data=pdf_bytes,
             file_name=f"KLIP_Report_{clean_filename}_{datetime.date.today()}.pdf",
             mime="application/pdf",
