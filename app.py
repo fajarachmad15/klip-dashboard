@@ -72,6 +72,13 @@ st.markdown(
         z-index: 1 !important;
     }
 
+    /* Sembunyikan Label Judul 'Dashboard Menu' */
+    div[data-testid="stRadio"] > label,
+    div[data-testid="stRadio"] [data-testid="stWidgetLabel"],
+    div[data-testid="stRadio"] p:empty {
+        display: none !important;
+    }
+
     /* Horizontal Tab Navigation Bar Modern */
     div[data-testid="stRadio"] {
         margin-top: 0.2rem !important;
@@ -80,17 +87,19 @@ st.markdown(
         z-index: 10 !important;
     }
 
+    div[data-testid="stRadio"] div[role="radiogroup"],
     div[data-testid="stRadio"] > div {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: wrap !important;
         gap: 12px !important;
         background: transparent !important;
-        padding: 4px 0 !important;
+        padding: 0 !important;
         align-items: center !important;
     }
 
-    div[data-testid="stRadio"] label {
+    div[data-testid="stRadio"] div[role="radiogroup"] > label,
+    div[data-testid="stRadio"] label[data-baseweb="radio"] {
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
@@ -108,29 +117,33 @@ st.markdown(
         margin: 0 !important;
     }
 
-    div[data-testid="stRadio"] label:hover {
+    div[data-testid="stRadio"] div[role="radiogroup"] > label:hover,
+    div[data-testid="stRadio"] label[data-baseweb="radio"]:hover {
         background-color: #E2E8F0 !important;
         border-color: #94A3B8 !important;
         color: #0F172A !important;
         transform: translateY(-1px);
     }
 
-    div[data-testid="stRadio"] label[data-checked="true"],
-    div[data-testid="stRadio"] label:has(input:checked) {
+    div[data-testid="stRadio"] div[role="radiogroup"] > label[data-checked="true"],
+    div[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) {
         background-color: #2563EB !important;
         color: #FFFFFF !important;
         border-color: #2563EB !important;
         box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3) !important;
     }
 
-    div[data-testid="stRadio"] label[data-checked="true"] p,
-    div[data-testid="stRadio"] label:has(input:checked) p {
+    div[data-testid="stRadio"] div[role="radiogroup"] > label[data-checked="true"] p,
+    div[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) p {
         color: #FFFFFF !important;
         font-weight: 700 !important;
     }
 
+    /* Sembunyikan lingkaran/dot radio button bawaan secara total */
     div[data-testid="stRadio"] input[type="radio"],
-    div[data-testid="stRadio"] [data-testid="stRadioButton"] > div:first-child {
+    div[data-testid="stRadio"] [data-testid="stRadioButton"] > div:first-child,
+    div[data-testid="stRadio"] label[data-baseweb="radio"] > div:first-child:not(:last-child),
+    div[data-testid="stRadio"] label > div:first-child:not(:last-child) {
         display: none !important;
     }
 
