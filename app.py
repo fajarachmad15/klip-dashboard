@@ -177,11 +177,11 @@ st.markdown(
         overflow-y: auto !important;
     }
 
-    /* Table / Dataframe Header Styling: Abu-abu muda & Bold */
+    /* Table / Dataframe Header Styling: Abu-abu muda solid & Font Hitam Bold */
     div[data-testid="stDataFrame"] {
         border-radius: 8px;
-        border: 1px solid #E2E8F0 !important;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        border: 1px solid #CBD5E1 !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
     }
 
     div[data-testid="stDataFrame"] div[data-testid="stDataFrameHeaderCell"],
@@ -189,9 +189,9 @@ st.markdown(
     div[data-testid="stDataFrame"] [role="columnheader"],
     thead th,
     th {
-        background-color: #E2E8F0 !important;
-        color: #0F172A !important;
-        font-weight: 700 !important;
+        background-color: #CBD5E1 !important;
+        color: #000000 !important;
+        font-weight: 800 !important;
         font-family: 'Plus Jakarta Sans', sans-serif !important;
     }
 
@@ -1001,26 +1001,26 @@ st.dataframe(
     use_container_width=True,
     height=450,
     column_config={
-        "Loc_Type": st.column_config.TextColumn("Location", width="small"),
-        "Employee_ID": st.column_config.TextColumn("NIK / ID", width="medium"),
-        "Employee_Name": st.column_config.TextColumn("Employee Name", width="large"),
-        "Status_PA": st.column_config.TextColumn("Status PA", width="small"),
-        "Engagement_Status": st.column_config.TextColumn("Status", width="medium"),
-        "Leader": st.column_config.NumberColumn("Leader", width="small", format="%d"),
-        "Sponsor": st.column_config.NumberColumn("Sponsor", width="small", format="%d"),
-        "Member": st.column_config.NumberColumn("Member", width="small", format="%d"),
-        "Fasilitator": st.column_config.NumberColumn("Fasilitator", width="small", format="%d"),
-        "Directorate": st.column_config.TextColumn("Directorate", width="medium"),
-        "Division": st.column_config.TextColumn("Division", width="large"),
-        "Company_Name": st.column_config.TextColumn("Company", width="medium"),
+        "Loc_Type": st.column_config.TextColumn("𝗟𝗼𝗰𝗮𝘁𝗶𝗼𝗻", width="small"),
+        "Employee_ID": st.column_config.TextColumn("𝗡𝗜𝗞 / 𝗜𝗗", width="medium"),
+        "Employee_Name": st.column_config.TextColumn("𝗘𝗺𝗽𝗹𝗼𝘆𝗲𝗲 𝗡𝗮𝗺𝗲", width="large"),
+        "Status_PA": st.column_config.TextColumn("𝗦𝘁𝗮𝘁𝘂𝘀 𝗣𝗔", width="small"),
+        "Engagement_Status": st.column_config.TextColumn("𝗦𝘁𝗮𝘁𝘂𝘀", width="medium"),
+        "Leader": st.column_config.NumberColumn("𝗟𝗲𝗮𝗱𝗲𝗿", width="small", format="%d"),
+        "Sponsor": st.column_config.NumberColumn("𝗦𝗽𝗼𝗻𝘀𝗼𝗿", width="small", format="%d"),
+        "Member": st.column_config.NumberColumn("𝗠𝗲𝗺𝗯𝗲𝗿", width="small", format="%d"),
+        "Fasilitator": st.column_config.NumberColumn("𝗙𝗮𝘀𝗶𝗹𝗶𝘁𝗮𝘁𝗼𝗿", width="small", format="%d"),
+        "Directorate": st.column_config.TextColumn("𝗗𝗶𝗿𝗲𝗰𝘁𝗼𝗿𝗮𝘁𝗲", width="medium"),
+        "Division": st.column_config.TextColumn("𝗗𝗶𝘃𝗶𝘀𝗶𝗼𝗻", width="large"),
+        "Company_Name": st.column_config.TextColumn("𝗖𝗼𝗺𝗽𝗮𝗻𝘆", width="medium"),
         "Engagement_Score": st.column_config.ProgressColumn(
-            "Engagement Score",
+            "𝗘𝗻𝗴𝗮𝗴𝗲𝗺𝗲𝗻𝘁 𝗦𝗰𝗼𝗿𝗲",
             help="Employee Participation Score (0 - 100)",
             format="%d",
             min_value=0,
             max_value=100,
         ),
-        "Completion_Date": st.column_config.TextColumn("Completion Date", width="small"),
+        "Completion_Date": st.column_config.TextColumn("𝗖𝗼𝗺𝗽𝗹𝗲𝘁𝗶𝗼𝗻 𝗗𝗮𝘁𝗲", width="small"),
     },
     hide_index=True,
 )
