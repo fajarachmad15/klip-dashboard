@@ -437,10 +437,19 @@ def load_fasilitator_data() -> Optional[pd.DataFrame]:
             else:
                 df[num_col] = 0
 
-        if "%Finished" in df.columns:
-            df["%Finished_Num"] = pd.to_numeric(df["%Finished"].astype(str).str.replace("%", "").str.replace("-", "0"), errors="coerce").fillna(0)
-        else:
-            df["%Finished_Num"] = df.apply(lambda r: (r["Finished 2026"] / r["Submitted 2026"] * 100) if r["Submitted 2026"] > 0 else 0, axis=1)
+        # Hitung %Finished berdasarkan formula ∑ Finished 2026 / ∑ Registered 2026
+        def compute_pct(row):
+            reg = row.get("Registered 2026", 0)
+            fin = row.get("Finished 2026", 0)
+            if reg > 0:
+                pct = (fin / reg) * 100
+                return f"{int(pct)}%" if pct.is_integer() else f"{pct:.1f}%", float(pct)
+            else:
+                return "-", -1.0
+
+        pct_results = df.apply(compute_pct, axis=1)
+        df["%Finished"] = [p[0] for p in pct_results]
+        df["%Finished_Num"] = [p[1] for p in pct_results]
 
         for text_col in ["Nama", "Function"]:
             if text_col in df.columns:
@@ -942,7 +951,7 @@ elif selected_page == "Fasilitator Corporate":
     tot_submitted = int(df_fas["Submitted 2026"].sum()) if "Submitted 2026" in df_fas.columns else 0
     tot_registered = int(df_fas["Registered 2026"].sum()) if "Registered 2026" in df_fas.columns else 0
     tot_finished = int(df_fas["Finished 2026"].sum()) if "Finished 2026" in df_fas.columns else 0
-    overall_fin_rate = (tot_finished / tot_submitted * 100) if tot_submitted > 0 else 0.0
+    overall_fin_rate = (tot_finished / tot_registered * 100) if tot_registered > 0 else 0.0
 
     # KPI Cards
     kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
@@ -955,7 +964,7 @@ elif selected_page == "Fasilitator Corporate":
     with kpi4:
         render_metric_card("Finished (2026)", f"{tot_finished:,}", f"{(tot_finished/tot_submitted*100):.1f}% of submitted" if tot_submitted > 0 else "0%", "info")
     with kpi5:
-        render_metric_card("Overall % Finished", f"{overall_fin_rate:.1f}%", "Completion Metric", "info" if overall_fin_rate >= 50 else "danger")
+        render_metric_card("Overall % Finished", f"{overall_fin_rate:.1f}%", "∑ Finished / ∑ Reg", "info" if overall_fin_rate >= 50 else "danger")
 
     st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
@@ -1011,23 +1020,140 @@ elif selected_page == "Fasilitator Corporate":
 
     st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
-    # Table Facilitator Performance
-    with st.container(border=True):
-        st.markdown(f'<div class="section-title">📋 Facilitator Performance Master Table ({len(df_fas):,} Persons)</div>', unsafe_allow_html=True)
-        st.dataframe(
-            df_fas[["Nama", "Function", "Submitted 2026", "Registered 2026", "Finished 2026", "%Finished"]],
-            use_container_width=True,
-            height=450,
-            column_config={
-                "Nama": st.column_config.TextColumn("𝗙𝗮𝘀𝗶𝗹𝗶𝘁𝗮𝘁𝗼𝗿 𝗡𝗮𝗺𝗲", width="large"),
-                "Function": st.column_config.TextColumn("𝗙𝘂𝗻𝗰𝘁𝗶𝗼𝗻 / 𝗗𝗲𝗽𝘁", width="large"),
-                "Submitted 2026": st.column_config.NumberColumn("𝗦𝘂𝗯𝗺𝗶𝘁𝘁𝗲𝗱 (𝟮𝟬𝟮𝟲)", width="small", format="%d"),
-                "Registered 2026": st.column_config.NumberColumn("𝗥𝗲𝗴𝗶𝘀𝘁𝗲𝗿𝗲𝗱 (𝟮𝟬𝟮𝟲)", width="small", format="%d"),
-                "Finished 2026": st.column_config.NumberColumn("𝗙𝗶𝗻𝗶𝘀𝗵𝗲𝗱 (𝟮𝟬𝟮𝟲)", width="small", format="%d"),
-                "%Finished": st.column_config.TextColumn("% 𝗙𝗶𝗻𝗶𝘀𝗵𝗲𝗱 𝗥𝗮𝘁𝗲", width="medium"),
-            },
-            hide_index=True,
-        )
+    # Master Table Facilitator Performance exactly matching sample reference
+    if len(df_fas) > 0:
+        max_sub = max(int(df_fas["Submitted 2026"].max()), 1) if "Submitted 2026" in df_fas.columns else 1
+        max_reg = max(int(df_fas["Registered 2026"].max()), 1) if "Registered 2026" in df_fas.columns else 1
+        max_fin = max(int(df_fas["Finished 2026"].max()), 1) if "Finished 2026" in df_fas.columns else 1
+
+        rows_html = []
+        for idx, (_, row) in enumerate(df_fas.iterrows(), 1):
+            nama = str(row.get("Nama", "-"))
+            func = str(row.get("Function", "-"))
+            sub = int(row.get("Submitted 2026", 0))
+            reg = int(row.get("Registered 2026", 0))
+            fin = int(row.get("Finished 2026", 0))
+            pct_str = str(row.get("%Finished", "-"))
+            pct_num = float(row.get("%Finished_Num", -1.0))
+
+            # Color coding logic matching image criteria
+            if reg >= 3:
+                if pct_num < 25 or pct_num < 0:
+                    bg_color = "#E11D48"
+                    text_color = "#FFFFFF"
+                elif 25 <= pct_num < 50:
+                    bg_color = "#FFA6B5"
+                    text_color = "#881337"
+                elif 50 <= pct_num < 55:
+                    bg_color = "#FEF08A"
+                    text_color = "#713F12"
+                elif 55 <= pct_num < 70:
+                    bg_color = "#BBF7D0"
+                    text_color = "#14532D"
+                else:
+                    bg_color = "#BFDBFE"
+                    text_color = "#1E3A8A"
+            else:
+                if pct_num >= 25:
+                    bg_color = "#FFA6B5"
+                    text_color = "#881337"
+                else:
+                    bg_color = "#E11D48"
+                    text_color = "#FFFFFF"
+
+            # Width of white progress bar
+            sub_bar_w = int((sub / max_sub) * 65) if sub > 0 else 0
+            reg_bar_w = int((reg / max_reg) * 65) if reg > 0 else 0
+            fin_bar_w = int((fin / max_fin) * 65) if fin > 0 else 0
+
+            sub_bar_html = f'<div style="display:inline-flex; align-items:center; justify-content:flex-end; gap:6px; width:100%;"><span style="min-width:16px; text-align:right;">{sub}</span><span style="display:inline-block; width:{sub_bar_w}px; height:10px; background:#FFFFFF; border-radius:2px;"></span></div>' if sub > 0 else f'<span style="display:inline-block; width:100%; text-align:right;">0</span>'
+            reg_bar_html = f'<div style="display:inline-flex; align-items:center; justify-content:flex-end; gap:6px; width:100%;"><span style="min-width:16px; text-align:right;">{reg}</span><span style="display:inline-block; width:{reg_bar_w}px; height:10px; background:#FFFFFF; border-radius:2px;"></span></div>' if reg > 0 else f'<span style="display:inline-block; width:100%; text-align:right;">0</span>'
+            fin_bar_html = f'<div style="display:inline-flex; align-items:center; justify-content:flex-end; gap:6px; width:100%;"><span style="min-width:16px; text-align:right;">{fin}</span><span style="display:inline-block; width:{fin_bar_w}px; height:10px; background:#FFFFFF; border-radius:2px;"></span></div>' if fin > 0 else f'<span style="display:inline-block; width:100%; text-align:right;">0</span>'
+
+            row_html = f"""
+            <tr style="background-color: {bg_color}; color: {text_color}; border-bottom: 1px solid rgba(255,255,255,0.2); font-weight: 700;">
+                <td style="padding: 7px 10px; text-align: left; width: 35px;">{idx}.</td>
+                <td style="padding: 7px 10px; text-align: left; width: 220px; white-space: nowrap;">{nama}</td>
+                <td style="padding: 7px 10px; text-align: left; width: 260px; white-space: nowrap;">{func}</td>
+                <td style="padding: 7px 10px; text-align: right; width: 130px;">{sub_bar_html}</td>
+                <td style="padding: 7px 10px; text-align: right; width: 130px;">{reg_bar_html}</td>
+                <td style="padding: 7px 10px; text-align: right; width: 130px;">{fin_bar_html}</td>
+                <td style="padding: 7px 10px; text-align: right; width: 90px;">{pct_str}</td>
+            </tr>
+            """
+            rows_html.append(row_html)
+
+        all_rows = "".join(rows_html)
+
+        table_html = f"""
+        <div style="font-family: 'Plus Jakarta Sans', sans-serif; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,0.08); margin-bottom: 25px;">
+            <!-- Top Black Header Bar with Definitions & Criteria -->
+            <div style="background-color: #000000; color: #FFFFFF; padding: 14px 18px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 14px;">
+                <div style="font-size: 1.4rem; font-weight: 800; letter-spacing: -0.5px;">
+                    Facilitator Performance
+                </div>
+                <div style="font-size: 0.72rem; line-height: 1.45; color: #F1F5F9;">
+                    <div><b style="color:#FFFFFF;">Submitted 2026</b> : KLIP yang disubmit di tahun 2026</div>
+                    <div><b style="color:#FFFFFF;">Registered 2026</b> : KLIP yang masuk fase implementasi/approved CI di tahun 2026 <span style="color:#94A3B8;">(termasuk carryover submit 2025)</span></div>
+                    <div><b style="color:#FFFFFF;">Finished 2026</b> : KLIP status CLS-Finished (Succeed) atau IMP-Failed di tahun 2026 <span style="color:#94A3B8;">(termasuk carryover submit 2025)</span></div>
+                    <div><b style="color:#FFFFFF;">%Finished</b> : ∑ Finished 2026 / ∑ Registered 2026</div>
+                </div>
+                <div style="background: #111827; padding: 6px 10px; border-radius: 6px; border: 1px solid #374151; font-size: 0.68rem;">
+                    <table style="border-collapse: collapse; width: 100%; color: #FFFFFF; font-weight: 600;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid #4B5563; font-weight: 800;">
+                                <th style="padding: 2px 8px; text-align: left;">Registered ≥ 3</th>
+                                <th style="padding: 2px 8px; text-align: left;">Registered &lt; 3</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="padding: 2px 8px;">%Finish &lt; 25% <span style="display:inline-block; width:14px; height:7px; background:#E11D48; border-radius:2px; vertical-align:middle; margin-left:4px;"></span></td>
+                                <td style="padding: 2px 8px;">%Finish &lt; 25% <span style="display:inline-block; width:14px; height:7px; background:#E11D48; border-radius:2px; vertical-align:middle; margin-left:4px;"></span></td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 2px 8px;">25% ≤ %Finish &lt; 50% <span style="display:inline-block; width:14px; height:7px; background:#FFA6B5; border-radius:2px; vertical-align:middle; margin-left:4px;"></span></td>
+                                <td style="padding: 2px 8px;">%Finish ≥ 25% <span style="display:inline-block; width:14px; height:7px; background:#FFA6B5; border-radius:2px; vertical-align:middle; margin-left:4px;"></span></td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 2px 8px;">50% ≤ %Finish &lt; 55% <span style="display:inline-block; width:14px; height:7px; background:#FEF08A; border-radius:2px; vertical-align:middle; margin-left:4px;"></span></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 2px 8px;">55% ≤ %Finish &lt; 70% <span style="display:inline-block; width:14px; height:7px; background:#BBF7D0; border-radius:2px; vertical-align:middle; margin-left:4px;"></span></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 2px 8px;">%Finish ≥ 70% <span style="display:inline-block; width:14px; height:7px; background:#BFDBFE; border-radius:2px; vertical-align:middle; margin-left:4px;"></span></td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Table Header & Body -->
+            <div style="overflow-x: auto; max-height: 520px; overflow-y: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem; font-family: 'Plus Jakarta Sans', sans-serif;">
+                    <thead style="position: sticky; top: 0; z-index: 2;">
+                        <tr style="background-color: #000000; color: #FFFFFF; font-weight: 800; text-align: left; border-bottom: 2px solid #000000;">
+                            <th style="padding: 9px 10px; width: 35px;">No.</th>
+                            <th style="padding: 9px 10px; width: 220px;">Nama</th>
+                            <th style="padding: 9px 10px; width: 260px;">Function</th>
+                            <th style="padding: 9px 10px; text-align: right; width: 130px;">Submitted 2026</th>
+                            <th style="padding: 9px 10px; text-align: right; width: 130px;">Registered 2026</th>
+                            <th style="padding: 9px 10px; text-align: right; width: 130px;">Finished 2026</th>
+                            <th style="padding: 9px 10px; text-align: right; width: 90px;">%Finished</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {all_rows}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        """
+        st.markdown(table_html, unsafe_allow_html=True)
 
 
 # ==============================================================================
