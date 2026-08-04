@@ -1259,7 +1259,7 @@ elif selected_page == "Submission 2026":
     st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
     # 2. Middle Section: Category YoY Table + Category Donut + Stage Donut
-    c_yoy, c_cat, c_stg = st.columns([5.2, 3.4, 3.4])
+    c_yoy, c_cat, c_stg = st.columns([6.6, 2.7, 2.7])
 
     with c_yoy:
         with st.container(border=True):
@@ -1274,20 +1274,20 @@ elif selected_page == "Submission 2026":
             slim_reg = len(df_sub[(df_sub["Category"] == "SLIM") & (df_sub["Stage"].isin(["IMPLEMENTATION", "CLOSING", "FINISHED"]))])
             slim_fin = len(df_sub[(df_sub["Category"] == "SLIM") & (df_sub["Stage"] == "FINISHED")])
             slim_pct = f"{(slim_fin / slim_reg * 100):.2f}%" if slim_reg > 0 else "null"
-            slim_sub_w = min(int((slim_sub / max_sub) * 55), 55)
-            slim_reg_w = min(int((slim_reg / max_sub) * 55), 55)
-            slim_fin_w = min(int((slim_fin / max_sub) * 55), 55)
-            slim_pct_w = 40 if slim_reg > 0 else 0
+            slim_sub_w = min(int((slim_sub / max_sub) * 65), 65)
+            slim_reg_w = min(int((slim_reg / max_sub) * 65), 65)
+            slim_fin_w = min(int((slim_fin / max_sub) * 65), 65)
+            slim_pct_w = 45 if slim_reg > 0 else 0
 
             cat_rows_html.append(f"""<tr>
-<td style="padding: 9px 6px; font-weight: 700; color: #0F172A; text-align: left;">SLIM</td>
-<td style="padding: 9px 6px; text-align: center;"><div style="display:flex; align-items:center; justify-content:center; gap:4px;"><span style="font-weight:600;">{slim_sub}</span><span style="display:inline-block; width:{slim_sub_w}px; height:7px; background:#F97316; border-radius:2px;"></span></div></td>
-<td style="padding: 9px 6px; text-align: center; color: #DC2626; font-size: 11px; font-weight: 600;">-89.8% &darr;</td>
-<td style="padding: 9px 6px; text-align: center;"><div style="display:flex; align-items:center; justify-content:center; gap:4px;"><span style="font-weight:600;">{slim_reg}</span><span style="display:inline-block; width:{slim_reg_w}px; height:7px; background:#16A34A; border-radius:2px;"></span></div></td>
-<td style="padding: 9px 6px; text-align: center; color: #DC2626; font-size: 11px; font-weight: 600;">-96.4% &darr;</td>
-<td style="padding: 9px 6px; text-align: center;"><div style="display:flex; align-items:center; justify-content:center; gap:4px;"><span style="font-weight:600;">{slim_fin}</span><span style="display:inline-block; width:{slim_fin_w}px; height:7px; background:#3B82F6; border-radius:2px;"></span></div></td>
-<td style="padding: 9px 6px; text-align: center; color: #DC2626; font-size: 11px; font-weight: 600;">-99.1% &darr;</td>
-<td style="padding: 9px 6px; text-align: center;"><div style="display:flex; align-items:center; justify-content:center; gap:4px;"><span style="font-weight:600;">{slim_pct}</span><span style="display:inline-block; width:{slim_pct_w}px; height:7px; background:#8B5CF6; border-radius:2px;"></span></div></td>
+<td style="padding: 9px 8px; font-weight: 700; color: #0F172A; text-align: left;">SLIM</td>
+<td style="padding: 9px 8px; text-align: center;"><div style="display:flex; align-items:center; justify-content:center; gap:5px;"><span style="font-weight:600;">{slim_sub}</span><span style="display:inline-block; width:{slim_sub_w}px; height:7px; background:#F97316; border-radius:2px;"></span></div></td>
+<td style="padding: 9px 8px; text-align: center; color: #DC2626; font-size: 11px; font-weight: 600;">-89.8% &darr;</td>
+<td style="padding: 9px 8px; text-align: center;"><div style="display:flex; align-items:center; justify-content:center; gap:5px;"><span style="font-weight:600;">{slim_reg}</span><span style="display:inline-block; width:{slim_reg_w}px; height:7px; background:#16A34A; border-radius:2px;"></span></div></td>
+<td style="padding: 9px 8px; text-align: center; color: #DC2626; font-size: 11px; font-weight: 600;">-96.4% &darr;</td>
+<td style="padding: 9px 8px; text-align: center;"><div style="display:flex; align-items:center; justify-content:center; gap:5px;"><span style="font-weight:600;">{slim_fin}</span><span style="display:inline-block; width:{slim_fin_w}px; height:7px; background:#3B82F6; border-radius:2px;"></span></div></td>
+<td style="padding: 9px 8px; text-align: center; color: #DC2626; font-size: 11px; font-weight: 600;">-99.1% &darr;</td>
+<td style="padding: 9px 8px; text-align: center;"><div style="display:flex; align-items:center; justify-content:center; gap:5px;"><span style="font-weight:600;">{slim_pct}</span><span style="display:inline-block; width:{slim_pct_w}px; height:7px; background:#8B5CF6; border-radius:2px;"></span></div></td>
 </tr>""")
 
             # ACT row
@@ -1295,45 +1295,45 @@ elif selected_page == "Submission 2026":
             act_reg = len(df_sub[(df_sub["Category"] == "ACT") & (df_sub["Stage"].isin(["IMPLEMENTATION", "CLOSING", "FINISHED"]))])
             act_fin = len(df_sub[(df_sub["Category"] == "ACT") & (df_sub["Stage"] == "FINISHED")])
             act_pct = f"{(act_fin / act_reg * 100):.2f}%" if act_reg > 0 else "null"
-            act_sub_w = min(int((act_sub / max_sub) * 55), 55)
+            act_sub_w = min(int((act_sub / max_sub) * 65), 65)
 
             cat_rows_html.append(f"""<tr style="background:#F8FAFC;">
-<td style="padding: 9px 6px; font-weight: 700; color: #0F172A; text-align: left;">ACT</td>
-<td style="padding: 9px 6px; text-align: center;"><div style="display:flex; align-items:center; justify-content:center; gap:4px;"><span style="font-weight:600;">{act_sub}</span><span style="display:inline-block; width:{act_sub_w}px; height:7px; background:#F97316; border-radius:2px;"></span></div></td>
-<td style="padding: 9px 6px; text-align: center; color: #DC2626; font-size: 11px; font-weight: 600;">-86.0% &darr;</td>
-<td style="padding: 9px 6px; text-align: center; font-weight:600;">{act_reg}</td>
-<td style="padding: 9px 6px; text-align: center; color: #DC2626; font-size: 11px; font-weight: 600;">-100.0% &darr;</td>
-<td style="padding: 9px 6px; text-align: center; font-weight:600;">{act_fin}</td>
-<td style="padding: 9px 6px; text-align: center; color: #DC2626; font-size: 11px; font-weight: 600;">-100.0% &darr;</td>
-<td style="padding: 9px 6px; text-align: center; color: #64748B; font-weight: 600;">{act_pct}</td>
+<td style="padding: 9px 8px; font-weight: 700; color: #0F172A; text-align: left;">ACT</td>
+<td style="padding: 9px 8px; text-align: center;"><div style="display:flex; align-items:center; justify-content:center; gap:5px;"><span style="font-weight:600;">{act_sub}</span><span style="display:inline-block; width:{act_sub_w}px; height:7px; background:#F97316; border-radius:2px;"></span></div></td>
+<td style="padding: 9px 8px; text-align: center; color: #DC2626; font-size: 11px; font-weight: 600;">-86.0% &darr;</td>
+<td style="padding: 9px 8px; text-align: center; font-weight:600;">{act_reg}</td>
+<td style="padding: 9px 8px; text-align: center; color: #DC2626; font-size: 11px; font-weight: 600;">-100.0% &darr;</td>
+<td style="padding: 9px 8px; text-align: center; font-weight:600;">{act_fin}</td>
+<td style="padding: 9px 8px; text-align: center; color: #DC2626; font-size: 11px; font-weight: 600;">-100.0% &darr;</td>
+<td style="padding: 9px 8px; text-align: center; color: #64748B; font-weight: 600;">{act_pct}</td>
 </tr>""")
 
             # Total row
             tot_pct_str = f"{(finished_cnt / registered_cnt * 100):.2f}%" if registered_cnt > 0 else "0%"
             cat_rows_html.append(f"""<tr style="background: #EFF6FF; border-top: 2px solid #CBD5E1; font-weight: 700;">
-<td style="padding: 9px 6px; color: #1E3A8A; text-align: left;">Total kes...</td>
-<td style="padding: 9px 6px; text-align: center; color: #1E3A8A;">{tot_sub}</td>
-<td style="padding: 9px 6px; text-align: center; color: #DC2626; font-size: 11px;">-89.1% &darr;</td>
-<td style="padding: 9px 6px; text-align: center; color: #1E3A8A;">{registered_cnt}</td>
-<td style="padding: 9px 6px; text-align: center; color: #DC2626; font-size: 11px;">-97.3% &darr;</td>
-<td style="padding: 9px 6px; text-align: center; color: #1E3A8A;">{finished_cnt}</td>
-<td style="padding: 9px 6px; text-align: center; color: #DC2626; font-size: 11px;">-99.3% &darr;</td>
-<td style="padding: 9px 6px; text-align: center; color: #1E3A8A;">{tot_pct_str}</td>
+<td style="padding: 9px 8px; color: #1E3A8A; text-align: left;">Total kes...</td>
+<td style="padding: 9px 8px; text-align: center; color: #1E3A8A;">{tot_sub}</td>
+<td style="padding: 9px 8px; text-align: center; color: #DC2626; font-size: 11px;">-89.1% &darr;</td>
+<td style="padding: 9px 8px; text-align: center; color: #1E3A8A;">{registered_cnt}</td>
+<td style="padding: 9px 8px; text-align: center; color: #DC2626; font-size: 11px;">-97.3% &darr;</td>
+<td style="padding: 9px 8px; text-align: center; color: #1E3A8A;">{finished_cnt}</td>
+<td style="padding: 9px 8px; text-align: center; color: #DC2626; font-size: 11px;">-99.3% &darr;</td>
+<td style="padding: 9px 8px; text-align: center; color: #1E3A8A;">{tot_pct_str}</td>
 </tr>""")
 
             tbody_inner = "".join(cat_rows_html)
             yoy_table_html = f"""<div style="overflow-x:auto; border-radius: 8px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); font-family: 'Plus Jakarta Sans', sans-serif;">
-<table style="width: 100%; border-collapse: collapse; font-size: 11.5px; line-height: 1.35;">
+<table style="width: 100%; border-collapse: collapse; font-size: 12px; line-height: 1.35;">
 <thead>
 <tr style="background: #2563EB; color: #FFFFFF;">
-<th style="padding: 8px 6px; font-weight: 700; text-align: left;">Category</th>
-<th style="padding: 8px 6px; font-weight: 700; text-align: center;">Submission &#9662;</th>
-<th style="padding: 8px 6px; font-weight: 700; text-align: center;">% &Delta;</th>
-<th style="padding: 8px 6px; font-weight: 700; text-align: center;">Registered</th>
-<th style="padding: 8px 6px; font-weight: 700; text-align: center;">% &Delta;</th>
-<th style="padding: 8px 6px; font-weight: 700; text-align: center;">Finished</th>
-<th style="padding: 8px 6px; font-weight: 700; text-align: center;">% &Delta;</th>
-<th style="padding: 8px 6px; font-weight: 700; text-align: center;">%Finished</th>
+<th style="padding: 9px 8px; font-weight: 700; text-align: left;">Category</th>
+<th style="padding: 9px 8px; font-weight: 700; text-align: center;">Submission &#9662;</th>
+<th style="padding: 9px 8px; font-weight: 700; text-align: center;">% &Delta;</th>
+<th style="padding: 9px 8px; font-weight: 700; text-align: center;">Registered</th>
+<th style="padding: 9px 8px; font-weight: 700; text-align: center;">% &Delta;</th>
+<th style="padding: 9px 8px; font-weight: 700; text-align: center;">Finished</th>
+<th style="padding: 9px 8px; font-weight: 700; text-align: center;">% &Delta;</th>
+<th style="padding: 9px 8px; font-weight: 700; text-align: center;">%Finished</th>
 </tr>
 </thead>
 <tbody>
@@ -1362,15 +1362,15 @@ elif selected_page == "Submission 2026":
                 fig_cat.update_traces(
                     textinfo="value",
                     textposition="inside",
-                    insidetextfont=dict(size=13, color="#FFFFFF", family="Plus Jakarta Sans", weight="bold"),
+                    insidetextfont=dict(size=12, color="#FFFFFF", family="Plus Jakarta Sans", weight="bold"),
                     marker=dict(line=dict(color="#FFFFFF", width=2)),
                 )
                 fig_cat.update_layout(
                     showlegend=True,
-                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5, font=dict(family="Plus Jakarta Sans", size=11)),
-                    annotations=[dict(text=f"<b>{tot_sub}</b>", x=0.5, y=0.5, font=dict(size=24, color="#1E293B", family="Plus Jakarta Sans", weight="bold"), showarrow=False)],
-                    margin=dict(t=35, b=10, l=10, r=10),
-                    height=265,
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5, font=dict(family="Plus Jakarta Sans", size=10)),
+                    annotations=[dict(text=f"<b>{tot_sub}</b>", x=0.5, y=0.5, font=dict(size=20, color="#1E293B", family="Plus Jakarta Sans", weight="bold"), showarrow=False)],
+                    margin=dict(t=30, b=5, l=5, r=5),
+                    height=235,
                 )
                 st.plotly_chart(fig_cat, use_container_width=True, config={"displayModeBar": False})
             else:
@@ -1401,15 +1401,15 @@ elif selected_page == "Submission 2026":
                 fig_stg.update_traces(
                     textinfo="value",
                     textposition="inside",
-                    insidetextfont=dict(size=13, color="#FFFFFF", family="Plus Jakarta Sans", weight="bold"),
+                    insidetextfont=dict(size=12, color="#FFFFFF", family="Plus Jakarta Sans", weight="bold"),
                     marker=dict(line=dict(color="#FFFFFF", width=2)),
                 )
                 fig_stg.update_layout(
                     showlegend=True,
-                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5, font=dict(family="Plus Jakarta Sans", size=10)),
-                    annotations=[dict(text=f"<b>{tot_sub}</b>", x=0.5, y=0.5, font=dict(size=24, color="#1E293B", family="Plus Jakarta Sans", weight="bold"), showarrow=False)],
-                    margin=dict(t=35, b=10, l=10, r=10),
-                    height=265,
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5, font=dict(family="Plus Jakarta Sans", size=9.5)),
+                    annotations=[dict(text=f"<b>{tot_sub}</b>", x=0.5, y=0.5, font=dict(size=20, color="#1E293B", family="Plus Jakarta Sans", weight="bold"), showarrow=False)],
+                    margin=dict(t=30, b=5, l=5, r=5),
+                    height=235,
                 )
                 st.plotly_chart(fig_stg, use_container_width=True, config={"displayModeBar": False})
             else:
