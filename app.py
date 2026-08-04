@@ -166,6 +166,40 @@ st.markdown(
         max-height: 480px !important;
         z-index: 999999 !important;
     }
+
+    /* Optimasi Tampilan Layar HP / Mobile */
+    @media (max-width: 768px) {
+        /* Paksa st.columns (KPI Cards & Role Cards) menjadi 2 kolom di HP */
+        [data-testid="stHorizontalBlock"] {
+            flex-wrap: wrap !important;
+            gap: 0.5rem !important;
+        }
+
+        [data-testid="column"] {
+            width: calc(50% - 0.5rem) !important;
+            flex: 1 1 calc(50% - 0.5rem) !important;
+            min-width: calc(50% - 0.5rem) !important;
+        }
+        
+        /* Kurangi padding card agar hemat ruang layar HP */
+        .metric-card {
+            padding: 12px 14px !important;
+            margin-bottom: 4px !important;
+        }
+        .metric-value {
+            font-size: 1.4rem !important;
+        }
+        .metric-title {
+            font-size: 0.75rem !important;
+        }
+        
+        /* Kurangi padding container utama di HP */
+        .block-container {
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+            padding-top: 1rem !important;
+        }
+    }
     </style>
     """,
     unsafe_allow_html=True,
