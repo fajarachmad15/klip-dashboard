@@ -454,20 +454,20 @@ st.markdown(
 # HORIZONTAL CONTROLS & FILTER BAR
 # ==============================================================================
 with st.container(border=True):
-    fcol1, fcol2, fcol3, fcol4 = st.columns([1.2, 1, 1.2, 1])
+    fcol1, fcol2, fcol3, fcol4 = st.columns([1.5, 1, 1.1, 0.9])
 
     with fcol1:
         if "Division" in df_raw.columns:
             all_divisions = sorted([d for d in df_raw["Division"].dropna().unique().tolist() if str(d).strip() not in ["-", ""]])
-            division_options = ["All Division"] + all_divisions
         else:
-            division_options = ["All Division"]
+            all_divisions = []
 
-        selected_division = st.selectbox(
-            "Division",
-            options=division_options,
-            index=0,
-            help="Filter records by a specific division or select 'All Division' to view everything.",
+        selected_divisions = st.multiselect(
+            "Division (Dept)",
+            options=all_divisions,
+            default=[],
+            placeholder="All Divisions (Click to select...)",
+            help="Select one or multiple divisions to filter the dashboard.",
         )
 
     with fcol2:
@@ -515,8 +515,8 @@ if refresh_clicked:
 # Apply filters safely
 df_filtered = df_raw.copy()
 
-if selected_division and selected_division != "All Division":
-    df_filtered = df_filtered[df_filtered["Division"] == selected_division]
+if selected_divisions:
+    df_filtered = df_filtered[df_filtered["Division"].isin(selected_divisions)]
 
 if status_filter and status_filter != "All Status":
     df_filtered = df_filtered[df_filtered["Engagement_Status"] == status_filter]
