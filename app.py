@@ -641,6 +641,7 @@ if selected_page == "Detail Engagement 2026":
                 fig_donut.update_traces(
                     textinfo="percent+value",
                     textposition="inside",
+                    insidetextorientation="horizontal",
                     texttemplate="<b>%{value}</b><br>(%{percent:.1%})",
                     insidetextfont=dict(size=14, color="#FFFFFF", family="Plus Jakarta Sans", weight="bold"),
                     marker=dict(line=dict(color="#FFFFFF", width=2)),
@@ -1120,6 +1121,8 @@ elif selected_page == "Submission 2026":
                 )
                 fig_stage.update_traces(
                     textinfo="percent+value",
+                    textposition="inside",
+                    insidetextorientation="horizontal",
                     texttemplate="<b>%{value}</b><br>(%{percent:.1%})",
                     insidetextfont=dict(size=13, color="#FFFFFF", family="Plus Jakarta Sans", weight="bold"),
                     marker=dict(line=dict(color="#FFFFFF", width=2)),
