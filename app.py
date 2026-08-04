@@ -177,6 +177,24 @@ st.markdown(
         overflow-y: auto !important;
     }
 
+    /* Table / Dataframe Header Styling: Abu-abu muda & Bold */
+    div[data-testid="stDataFrame"] {
+        border-radius: 8px;
+        border: 1px solid #E2E8F0 !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    div[data-testid="stDataFrame"] div[data-testid="stDataFrameHeaderCell"],
+    div[data-testid="stDataFrame"] header,
+    div[data-testid="stDataFrame"] [role="columnheader"],
+    thead th,
+    th {
+        background-color: #E2E8F0 !important;
+        color: #0F172A !important;
+        font-weight: 700 !important;
+        font-family: 'Plus Jakarta Sans', sans-serif !important;
+    }
+
     /* Optimasi Tampilan Layar HP / Mobile */
     @media (max-width: 768px) {
         /* Paksa st.columns (KPI Cards & Role Cards) menjadi 2 kolom di HP */
