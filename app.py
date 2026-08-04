@@ -1347,6 +1347,11 @@ elif selected_page == "Submission 2026":
         with st.container(border=True):
             st.markdown('<div class="section-title">📊 #KLIP by Category</div>', unsafe_allow_html=True)
             if tot_sub > 0:
+                st.markdown("""<div style="display:flex; justify-content:center; gap:12px; margin-top:-4px; margin-bottom:4px; font-size:11px; font-weight:600; color:#475569;">
+<span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:9px; height:9px; background:#EAB308; border-radius:2px;"></span> SLIM</span>
+<span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:9px; height:9px; background:#10B981; border-radius:2px;"></span> ACT</span>
+</div>""", unsafe_allow_html=True)
+
                 cat_counts = df_sub["Category"].value_counts().reindex(["SLIM", "ACT"]).fillna(0).reset_index()
                 cat_counts.columns = ["Category", "Count"]
                 cat_counts = cat_counts[cat_counts["Count"] > 0]
@@ -1366,11 +1371,10 @@ elif selected_page == "Submission 2026":
                     marker=dict(line=dict(color="#FFFFFF", width=2)),
                 )
                 fig_cat.update_layout(
-                    showlegend=True,
-                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5, font=dict(family="Plus Jakarta Sans", size=10)),
-                    annotations=[dict(text=f"<b>{tot_sub}</b>", x=0.5, y=0.5, font=dict(size=20, color="#1E293B", family="Plus Jakarta Sans", weight="bold"), showarrow=False)],
-                    margin=dict(t=30, b=5, l=5, r=5),
-                    height=235,
+                    showlegend=False,
+                    annotations=[dict(text=f"<b>{tot_sub}</b>", x=0.5, y=0.5, font=dict(size=22, color="#1E293B", family="Plus Jakarta Sans", weight="bold"), showarrow=False)],
+                    margin=dict(t=5, b=5, l=5, r=5),
+                    height=195,
                 )
                 st.plotly_chart(fig_cat, use_container_width=True, config={"displayModeBar": False})
             else:
@@ -1380,6 +1384,13 @@ elif selected_page == "Submission 2026":
         with st.container(border=True):
             st.markdown('<div class="section-title">📊 #KLIP by Stage</div>', unsafe_allow_html=True)
             if tot_sub > 0:
+                st.markdown("""<div style="display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:-4px; margin-bottom:4px; font-size:10px; font-weight:600; color:#475569;">
+<span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:8px; height:8px; background:#EAB308; border-radius:2px;"></span> PROPOSAL</span>
+<span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:8px; height:8px; background:#3B82F6; border-radius:2px;"></span> CLOSING</span>
+<span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:8px; height:8px; background:#10B981; border-radius:2px;"></span> IMPL</span>
+<span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:8px; height:8px; background:#8B5CF6; border-radius:2px;"></span> FINISHED</span>
+</div>""", unsafe_allow_html=True)
+
                 stg_order = ["PROPOSAL", "CLOSING", "IMPLEMENTATION", "FINISHED"]
                 stg_counts = df_sub["Stage"].value_counts().reindex(stg_order).fillna(0).reset_index()
                 stg_counts.columns = ["Stage", "Count"]
@@ -1405,11 +1416,10 @@ elif selected_page == "Submission 2026":
                     marker=dict(line=dict(color="#FFFFFF", width=2)),
                 )
                 fig_stg.update_layout(
-                    showlegend=True,
-                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5, font=dict(family="Plus Jakarta Sans", size=9.5)),
-                    annotations=[dict(text=f"<b>{tot_sub}</b>", x=0.5, y=0.5, font=dict(size=20, color="#1E293B", family="Plus Jakarta Sans", weight="bold"), showarrow=False)],
-                    margin=dict(t=30, b=5, l=5, r=5),
-                    height=235,
+                    showlegend=False,
+                    annotations=[dict(text=f"<b>{tot_sub}</b>", x=0.5, y=0.5, font=dict(size=22, color="#1E293B", family="Plus Jakarta Sans", weight="bold"), showarrow=False)],
+                    margin=dict(t=5, b=5, l=5, r=5),
+                    height=195,
                 )
                 st.plotly_chart(fig_stg, use_container_width=True, config={"displayModeBar": False})
             else:
