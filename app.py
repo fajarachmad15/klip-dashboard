@@ -164,15 +164,17 @@ st.markdown(
         max-width: 95% !important;
     }
 
-    /* Perluas tinggi maksimum menu dropdown/selectbox saat diklik */
-    div[data-baseweb="popover"],
-    div[data-baseweb="popover"] > div,
-    div[data-baseweb="popover"] div[role="listbox"],
-    div[data-baseweb="select"] ul,
-    div[data-baseweb="popover"] ul,
-    ul[data-baseweb="menu"] {
-        max-height: 480px !important;
+    /* Pastikan Dropdown / Multiselect selalu terbuka ke bawah secara proporsional */
+    div[data-baseweb="popover"] {
         z-index: 999999 !important;
+    }
+
+    div[data-baseweb="popover"] div[role="listbox"],
+    div[data-baseweb="popover"] ul,
+    ul[data-baseweb="menu"],
+    div[data-baseweb="select"] ul {
+        max-height: 250px !important;
+        overflow-y: auto !important;
     }
 
     /* Optimasi Tampilan Layar HP / Mobile */
