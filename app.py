@@ -66,10 +66,24 @@ st.markdown(
         max-width: 95% !important;
     }
 
-    /* Pastikan header Streamlit tidak menutupi tab */
-    header[data-testid="stHeader"] {
+    /* Pastikan header Streamlit & action toolbar tetap di posisi paling atas dan TIDAK floating/sticky saat di-scroll */
+    header[data-testid="stHeader"],
+    .stAppHeader,
+    [data-testid="stToolbar"],
+    .stAppToolbar,
+    div[data-testid="stDecoration"] {
+        position: absolute !important;
+        top: 0 !important;
+        right: 0 !important;
         background: transparent !important;
         z-index: 1 !important;
+    }
+
+    /* Hilangkan modebar / floating camera & zoom icons pada grafik Plotly */
+    .modebar-container,
+    .modebar,
+    .plotly .modebar {
+        display: none !important;
     }
 
     /* Sembunyikan Label Judul 'Dashboard Menu' */
@@ -652,7 +666,7 @@ if selected_page == "Detail Engagement 2026":
                     margin=dict(t=10, b=30, l=10, r=10),
                     height=285,
                 )
-                st.plotly_chart(fig_donut, use_container_width=True)
+                st.plotly_chart(fig_donut, use_container_width=True, config={"displayModeBar": False})
             else:
                 st.info("No data available for the selected filters.")
 
@@ -807,7 +821,7 @@ if selected_page == "Detail Engagement 2026":
                 margin=dict(t=35, b=20, l=10, r=10),
                 height=380,
             )
-            st.plotly_chart(fig_div, use_container_width=True)
+            st.plotly_chart(fig_div, use_container_width=True, config={"displayModeBar": False})
         else:
             st.info("No division data available.")
 
@@ -982,7 +996,7 @@ elif selected_page == "Fasilitator Corporate":
                 margin=dict(t=30, b=20, l=10, r=10),
                 height=max(380, len(df_chart) * 28),
             )
-            st.plotly_chart(fig_fas, use_container_width=True)
+            st.plotly_chart(fig_fas, use_container_width=True, config={"displayModeBar": False})
         else:
             st.info("No facilitator records available for the selected filters.")
 
@@ -1133,7 +1147,7 @@ elif selected_page == "Submission 2026":
                     margin=dict(t=10, b=30, l=10, r=10),
                     height=300,
                 )
-                st.plotly_chart(fig_stage, use_container_width=True)
+                st.plotly_chart(fig_stage, use_container_width=True, config={"displayModeBar": False})
             else:
                 st.info("No stage distribution data available.")
 
@@ -1175,7 +1189,7 @@ elif selected_page == "Submission 2026":
                     margin=dict(t=30, b=20, l=10, r=10),
                     height=300,
                 )
-                st.plotly_chart(fig_month, use_container_width=True)
+                st.plotly_chart(fig_month, use_container_width=True, config={"displayModeBar": False})
             else:
                 st.info("No monthly trend data available.")
 
