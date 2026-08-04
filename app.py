@@ -150,10 +150,18 @@ st.markdown(
         gap: 6px;
     }
 
-    /* Berikan ruang scroll bawah masif pada sidebar agar dropdown tidak pernah mentok */
-    section[data-testid="stSidebar"] div[data-testid="stSidebarContent"],
-    section[data-testid="stSidebar"] .block-container {
-        padding-bottom: 400px !important;
+    /* Sembunyikan Sidebar Streamlit Bawaan Secara Total */
+    [data-testid="stSidebar"],
+    [data-testid="collapsedControl"] {
+        display: none !important;
+    }
+
+    /* Lebarkan Container Utama */
+    .block-container {
+        padding-top: 2rem !important;
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
+        max-width: 95% !important;
     }
 
     /* Perluas tinggi maksimum menu dropdown/selectbox saat diklik */
@@ -360,129 +368,18 @@ def load_klip_data(file_path: str = str(LATEST_CSV_PATH)) -> Optional[pd.DataFra
 
 
 # ==============================================================================
-# SIDEBAR CONTROLS & FILTER
+# DATA LOADING & INITIALIZATION
 # ==============================================================================
-with st.sidebar:
-    st.markdown(
-        """
-        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-            <div style="background: #2563EB; color: white; border-radius: 8px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold;">
-                📊
-            </div>
-            <div>
-                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #1E293B;">KLIP Analytics</h3>
-                <span style="font-size: 0.75rem; color: #64748B; font-weight: 500;">Google Drive Ingestion Engine</span>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+# Check local file status
+file_exists = LATEST_CSV_PATH.exists()
+last_mod_time = "-"
+if file_exists:
+    mtime = os.path.getmtime(LATEST_CSV_PATH)
+    last_mod_time = datetime.datetime.fromtimestamp(mtime).strftime("%d-%m-%Y %H:%M:%S")
 
-    st.markdown("---")
+# Load raw data
+df_raw = load_klip_data()
 
-    # Status Data & Refresh Section
-    st.markdown("### 🔄 Data Synchronization")
-    
-    # Check local file status
-    file_exists = LATEST_CSV_PATH.exists()
-    last_mod_time = "-"
-    if file_exists:
-        mtime = os.path.getmtime(LATEST_CSV_PATH)
-        last_mod_time = datetime.datetime.fromtimestamp(mtime).strftime("%d-%m-%Y %H:%M:%S")
-
-    st.markdown(
-        f"""
-        <div style="background: #F1F5F9; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 0.8rem;">
-            <div style="color: #475569;">🕒 <b>Last Update:</b> {last_mod_time}</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    refresh_clicked = st.button("🔄 Refresh Data from Drive", type="primary", use_container_width=True)
-
-    with st.expander("⚙️ Google Drive Configuration", expanded=False):
-        folder_id_input = st.text_input(
-            "Google Drive Folder ID",
-            value=DEFAULT_FOLDER_ID,
-            help="Google Drive Folder ID where CSV files are hosted.",
-        )
-        target_filename_input = st.text_input(
-            "Target CSV Filename",
-            value=DEFAULT_TARGET_FILENAME,
-            help="CSV target filename to ingest from the folder.",
-        )
-
-    st.markdown("---")
-
-    # Load data for dynamic filter populating
-    df_raw = load_klip_data()
-
-    # Filter Section
-    st.markdown("### 🔍 Filter Data")
-
-    # 1. Division Filter (Positioned first with ample room to open upward/downward)
-    if df_raw is not None and len(df_raw) > 0 and "Division" in df_raw.columns:
-        all_divisions = sorted([d for d in df_raw["Division"].dropna().unique().tolist() if str(d).strip() not in ["-", ""]])
-        division_options = ["All Division"] + all_divisions
-    else:
-        division_options = ["All Division"]
-
-    selected_division = st.selectbox(
-        "Division",
-        options=division_options,
-        index=0,
-        help="Filter records by a specific division or select 'All Division' to view everything.",
-    )
-
-    # 2. Engagement Status Filter
-    status_filter = st.selectbox(
-        "Engagement Status",
-        options=["All Status", "Engaged", "Non-Engaged"],
-        index=0,
-        help="Filter records by engagement participation status."
-    )
-
-    # 3. Search Filter
-    filter_search = st.text_input(
-        "Search Name / ID",
-        placeholder="Type employee name or ID...",
-        help="Quick search across Employee Name and ID."
-    )
-
-    # Spacer at bottom of sidebar to prevent any dropdown clipping
-    st.markdown("<div style='height: 350px;'></div>", unsafe_allow_html=True)
-
-
-# ==============================================================================
-# GOOGLE DRIVE SYNC LOGIC (TRIGGERED BY REFRESH BUTTON)
-# ==============================================================================
-if refresh_clicked:
-    with st.spinner("⏳ Downloading and synchronizing CSV from Google Drive..."):
-        success, message, result_path = download_klip_data_from_drive(
-            folder_id=folder_id_input,
-            target_filename=target_filename_input,
-            dest_path=LATEST_CSV_PATH,
-        )
-
-    if success:
-        st.cache_data.clear()
-        st.toast("✅ Data successfully synced from Google Drive!", icon="🎉")
-        st.success(f"**Success!** {message}")
-        st.rerun()
-    else:
-        st.error(f"**Sync Failed:**\n\n{message}")
-        if not LATEST_CSV_PATH.exists():
-            st.info("💡 Click below to generate simulated demo data for immediate exploration.")
-            if st.button("⚡ Generate Demo Data"):
-                generate_sample_mock_data(LATEST_CSV_PATH)
-                st.cache_data.clear()
-                st.rerun()
-
-
-# ==============================================================================
-# DATA VALIDATION & FILTERING
-# ==============================================================================
 # Handle missing data file
 if df_raw is None or len(df_raw) == 0:
     st.markdown(
@@ -502,7 +399,7 @@ if df_raw is None or len(df_raw) == 0:
         st.markdown(
             f"""
             #### 1. Sync from Google Drive
-            Click button in sidebar to download from Folder ID:
+            Click button to download from Folder ID:
             - **Folder ID:** `{DEFAULT_FOLDER_ID}`
             - **Target File:** `{DEFAULT_TARGET_FILENAME}`
             
@@ -533,6 +430,88 @@ if df_raw is None or len(df_raw) == 0:
     st.stop()
 
 
+# ==============================================================================
+# TOP HEADER BANNER
+# ==============================================================================
+total_all = len(df_raw)
+
+st.markdown(
+    f"""
+    <div class="main-header">
+        <h1>📊 KLIP Finance Engagement Dashboard 2026</h1>
+        <p>Real-Time Corporate Finance Employee Engagement Monitoring via Google Drive Ingestion</p>
+        <div class="header-pills">
+            <span class="pill">🕒 <b>Last Sync:</b> {last_mod_time}</span>
+            <span class="pill">👥 <b>Total Dataset:</b> {total_all:,} Employees</span>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+# ==============================================================================
+# HORIZONTAL CONTROLS & FILTER BAR
+# ==============================================================================
+with st.container(border=True):
+    fcol1, fcol2, fcol3, fcol4 = st.columns([1.2, 1, 1.2, 1])
+
+    with fcol1:
+        if "Division" in df_raw.columns:
+            all_divisions = sorted([d for d in df_raw["Division"].dropna().unique().tolist() if str(d).strip() not in ["-", ""]])
+            division_options = ["All Division"] + all_divisions
+        else:
+            division_options = ["All Division"]
+
+        selected_division = st.selectbox(
+            "Division",
+            options=division_options,
+            index=0,
+            help="Filter records by a specific division or select 'All Division' to view everything.",
+        )
+
+    with fcol2:
+        status_filter = st.selectbox(
+            "Engagement Status",
+            options=["All Status", "Engaged", "Non-Engaged"],
+            index=0,
+            help="Filter records by engagement participation status.",
+        )
+
+    with fcol3:
+        filter_search = st.text_input(
+            "Search Name / ID",
+            placeholder="Type employee name or ID...",
+            help="Quick search across Employee Name and ID.",
+        )
+
+    with fcol4:
+        st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
+        refresh_clicked = st.button("🔄 Refresh Data", type="primary", use_container_width=True)
+
+# Google Drive Sync Handler
+if refresh_clicked:
+    with st.spinner("⏳ Downloading and synchronizing CSV from Google Drive..."):
+        success, message, result_path = download_klip_data_from_drive(
+            folder_id=DEFAULT_FOLDER_ID,
+            target_filename=DEFAULT_TARGET_FILENAME,
+            dest_path=LATEST_CSV_PATH,
+        )
+
+    if success:
+        st.cache_data.clear()
+        st.toast("✅ Data successfully synced from Google Drive!", icon="🎉")
+        st.success(f"**Success!** {message}")
+        st.rerun()
+    else:
+        st.error(f"**Sync Failed:**\n\n{message}")
+        if not LATEST_CSV_PATH.exists():
+            st.info("💡 Click below to generate simulated demo data for immediate exploration.")
+            if st.button("⚡ Generate Demo Data"):
+                generate_sample_mock_data(LATEST_CSV_PATH)
+                st.cache_data.clear()
+                st.rerun()
+
 # Apply filters safely
 df_filtered = df_raw.copy()
 
@@ -549,26 +528,7 @@ if filter_search.strip():
         | df_filtered["Employee_ID"].astype(str).str.lower().str.contains(kw, na=False)
     ]
 
-
-# ==============================================================================
-# TOP HEADER BANNER
-# ==============================================================================
-total_all = len(df_raw)
 total_filtered = len(df_filtered)
-
-st.markdown(
-    f"""
-    <div class="main-header">
-        <h1>📊 KLIP Finance Engagement Dashboard 2026</h1>
-        <p>Real-Time Corporate Finance Employee Engagement Monitoring via Google Drive Ingestion</p>
-        <div class="header-pills">
-            <span class="pill">🕒 <b>Last Sync:</b> {last_mod_time}</span>
-            <span class="pill">👥 <b>Total Dataset:</b> {total_all:,} Employees</span>
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
 
 
 # ==============================================================================
@@ -725,7 +685,7 @@ if total_filtered > 0:
                 status_counts,
                 names="Status",
                 values="Count",
-                hole=0.60,
+                hole=0.45,
                 color="Status",
                 color_discrete_map=color_map,
             )
